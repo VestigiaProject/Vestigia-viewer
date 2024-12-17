@@ -5,12 +5,13 @@ import { Card } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { Heart, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useToast } from '@/components/ui/use-toast';
 import Link from 'next/link';
 import type { HistoricalPostWithFigure } from '@/lib/supabase';
+import { fetchPostInteractions } from '@/lib/api/posts';
 
 type PostContentProps = {
   post: HistoricalPostWithFigure;
@@ -22,6 +23,31 @@ export function PostContent({ post }: PostContentProps) {
   const [likes, setLikes] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    async function loadInteractions() {
+      try {
+        const { likes } = await fetchPostInteractions(post.id);
+        setLikes(likes);
+
+        if (user) {
+          const { data } = await supabase
+            .from('user_interactions')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('post_id', post.id)
+            .eq('type', 'like')
+            .single();
+
+          setIsLiked(!!data);
+        }
+      } catch (error) {
+        console.error('Error loading interactions:', error);
+      }
+    }
+
+    loadInteractions();
+  }, [post.id, user]);
 
   const handleLike = async () => {
     if (!user || loading) return;

@@ -18,6 +18,29 @@ export async function fetchPosts(currentDate: Date, page: number = 1, limit: num
   return data as HistoricalPostWithFigure[];
 }
 
+export async function fetchPost(id: string) {
+  const { data, error } = await supabase
+    .from('historical_posts')
+    .select(`
+      *,
+      figure:historical_figures(*)
+    `)
+    .eq('id', id)
+    .single();
+
+  if (error) throw error;
+  return data as HistoricalPostWithFigure;
+}
+
+export async function fetchAllPostIds() {
+  const { data, error } = await supabase
+    .from('historical_posts')
+    .select('id');
+
+  if (error) throw error;
+  return data.map(post => post.id);
+}
+
 export async function fetchPostInteractions(postId: string) {
   const { data: likes, error: likesError } = await supabase
     .from('user_interactions')

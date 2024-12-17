@@ -1,42 +1,17 @@
-'use client';
-
-import { useEffect, useState } from 'react';
+import { Suspense } from 'react';
 import { PostContent } from '@/components/post/PostContent';
 import { PostComments } from '@/components/post/PostComments';
-import { supabase } from '@/lib/supabase';
-import { Skeleton } from '@/components/ui/skeleton';
-import type { HistoricalPostWithFigure } from '@/lib/supabase';
+import { PostSkeleton } from '@/components/post/PostSkeleton';
+import { fetchAllPostIds, fetchPost } from '@/lib/api/posts';
 
-export default function PostPage({ params }: { params: { id: string } }) {
-  const [post, setPost] = useState<HistoricalPostWithFigure | null>(null);
-  const [loading, setLoading] = useState(true);
+// This is required for static site generation with dynamic routes
+export async function generateStaticParams() {
+  const ids = await fetchAllPostIds();
+  return ids.map((id) => ({ id }));
+}
 
-  useEffect(() => {
-    loadPost();
-  }, [params.id]);
-
-  async function loadPost() {
-    try {
-      const { data } = await supabase
-        .from('historical_posts')
-        .select(`
-          *,
-          figure:historical_figures(*)
-        `)
-        .eq('id', params.id)
-        .single();
-
-      setPost(data);
-    } catch (error) {
-      console.error('Error loading post:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  if (loading) {
-    return <PostSkeleton />;
-  }
+export default async function PostPage({ params }: { params: { id: string } }) {
+  const post = await fetchPost(params.id);
 
   if (!post) {
     return (
@@ -49,23 +24,10 @@ export default function PostPage({ params }: { params: { id: string } }) {
   return (
     <div className="min-h-screen bg-background">
       <main className="container max-w-2xl mx-auto py-4">
-        <PostContent post={post} />
-        <PostComments postId={post.id} />
-      </main>
-    </div>
-  );
-}
-
-function PostSkeleton() {
-  return (
-    <div className="min-h-screen bg-background">
-      <main className="container max-w-2xl mx-auto py-4">
-        <Skeleton className="h-64 w-full mb-8" />
-        <div className="space-y-4">
-          {[...Array(3)].map((_, i) => (
-            <Skeleton key={i} className="h-24 w-full" />
-          ))}
-        </div>
+        <Suspense fallback={<PostSkeleton />}>
+          <PostContent post={post} />
+          <PostComments postId={post.id} />
+        </Suspense>
       </main>
     </div>
   );

@@ -32,6 +32,39 @@ BEGIN
 END;
 $$;
 
+-- Create function to handle avatar updates
+CREATE OR REPLACE FUNCTION public.handle_storage_update()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  file_user_id uuid;
+  public_url text;
+BEGIN
+  -- Extract user_id from the file name (assuming format: user_id-timestamp.ext)
+  file_user_id := (regexp_match(NEW.name, '^([0-9a-f-]+)-'))[1]::uuid;
+  
+  -- Construct the full public URL for the uploaded file using the hardcoded Supabase URL
+  public_url := 'https://ocubfcrajgjmdzymcwbu.supabase.co/storage/v1/object/public/' || NEW.bucket_id || '/' || NEW.name;
+
+  -- Update the user_profiles table with the new avatar_url
+  UPDATE public.user_profiles
+  SET avatar_url = public_url
+  WHERE id = file_user_id;
+
+  RETURN NEW;
+END;
+$$;
+
+-- Create trigger for avatar updates
+DROP TRIGGER IF EXISTS on_avatar_updated ON storage.objects;
+CREATE TRIGGER on_avatar_updated
+  AFTER INSERT ON storage.objects
+  FOR EACH ROW
+  WHEN (NEW.bucket_id = 'avatars')
+  EXECUTE FUNCTION public.handle_storage_update();
+
 -- Drop existing policies if they exist
 DROP POLICY IF EXISTS "Users can view all profiles" ON user_profiles;
 DROP POLICY IF EXISTS "Users can update own profile" ON user_profiles;
@@ -53,3 +86,28 @@ CREATE POLICY "Users can insert own profile"
 ON user_profiles FOR INSERT
 TO authenticated
 WITH CHECK (auth.uid() = id);
+
+-- Storage policies for avatars bucket
+CREATE POLICY "Public Access"
+ON storage.objects FOR SELECT
+TO public
+USING (bucket_id = 'avatars');
+
+CREATE POLICY "Authenticated users can upload files"
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK (bucket_id = 'avatars');
+
+CREATE POLICY "Authenticated users can update files"
+ON storage.objects FOR UPDATE
+TO authenticated
+USING (bucket_id = 'avatars');
+
+CREATE POLICY "Authenticated users can delete files"
+ON storage.objects FOR DELETE
+TO authenticated
+USING (bucket_id = 'avatars');
+
+-- Enable RLS
+ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;

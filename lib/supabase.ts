@@ -31,6 +31,7 @@ export type UserProfile = {
   username: string;
   avatar_url?: string;
   start_date: string;
+  created_at: string;
 };
 
 export type UserInteraction = {

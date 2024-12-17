@@ -37,7 +37,7 @@ CREATE TABLE historical_posts (
 
 -- Create Users table (managed by Supabase Auth, only storing additional info)
 CREATE TABLE user_profiles (
-    id UUID PRIMARY KEY REFERENCES auth.users(id),
+    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     username TEXT UNIQUE,
     start_date TIMESTAMP WITH TIME ZONE DEFAULT '1789-06-01 00:00:00+00'::TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
@@ -57,6 +57,33 @@ CREATE TABLE user_interactions (
 CREATE INDEX idx_posts_original_date ON historical_posts(original_date);
 CREATE INDEX idx_interactions_post_id ON user_interactions(post_id);
 CREATE INDEX idx_interactions_user_id ON user_interactions(user_id);
+
+-- Create function to handle new user creation
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO public.user_profiles (id, username, start_date)
+  VALUES (
+    NEW.id,
+    COALESCE(
+      (NEW.raw_user_meta_data->>'username'),
+      SPLIT_PART(NEW.email, '@', 1),
+      'user_' || SUBSTRING(NEW.id::text, 1, 8)
+    ),
+    '1789-06-01 00:00:00+00'::TIMESTAMP WITH TIME ZONE
+  );
+  RETURN NEW;
+END;
+$$;
+
+-- Create trigger for new user creation
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 ```
 
 3. Set up Storage buckets:

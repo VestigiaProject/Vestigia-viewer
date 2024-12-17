@@ -27,7 +27,10 @@ export async function fetchPostInteractions(postId: string) {
 
   const { data: comments, error: commentsError } = await supabase
     .from('user_interactions')
-    .select('*')
+    .select(`
+      *,
+      user:user_profiles!user_interactions_user_id_fkey(username)
+    `)
     .eq('post_id', postId)
     .eq('type', 'comment')
     .order('created_at', { ascending: true });
@@ -36,6 +39,9 @@ export async function fetchPostInteractions(postId: string) {
   
   return {
     likes: likes?.length || 0,
-    comments: comments || [],
+    comments: comments?.map(comment => ({
+      ...comment,
+      username: comment.user?.username
+    })) || [],
   };
 }

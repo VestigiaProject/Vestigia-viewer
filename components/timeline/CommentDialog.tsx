@@ -80,12 +80,12 @@ export function CommentDialog({
               comments.map((comment) => (
                 <div key={comment.id} className="flex space-x-2 mb-4">
                   <Avatar className="h-8 w-8">
-                    <AvatarFallback>U</AvatarFallback>
+                    <AvatarFallback>{comment.username?.[0].toUpperCase() || 'U'}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
                     <div className="bg-muted p-3 rounded-lg">
                       <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm font-medium">User</span>
+                        <span className="text-sm font-medium">{comment.username || 'Anonymous'}</span>
                         <span className="text-xs text-muted-foreground">
                           {format(new Date(comment.created_at), 'MMM d, yyyy')}
                         </span>

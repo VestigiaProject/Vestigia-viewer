@@ -39,4 +39,5 @@ export type UserInteraction = {
   type: 'comment' | 'like';
   content?: string;
   created_at: string;
+  username?: string; // Added for comment display
 };

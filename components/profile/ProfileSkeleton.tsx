@@ -1,3 +1,6 @@
+import { ProfileHeaderSkeleton } from './ProfileHeader';
+import { Skeleton } from '@/components/ui/skeleton';
+
 export function ProfileSkeleton() {
   return (
     <div className="min-h-screen bg-background">

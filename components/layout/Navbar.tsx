@@ -13,19 +13,21 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { useUserProfile } from '@/lib/hooks/useUserProfile';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
-import { Settings, LogOut } from 'lucide-react';
+import { Settings, LogOut, Clock } from 'lucide-react';
 import { useState } from 'react';
 import { ProfileSettingsDialog } from './ProfileSettingsDialog';
+import { TimePeriodDialog } from './TimePeriodDialog';
 
 export function Navbar() {
   const { user } = useAuth();
   const { profile } = useUserProfile();
   const router = useRouter();
   const [showSettings, setShowSettings] = useState(false);
+  const [showTimePeriod, setShowTimePeriod] = useState(false);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    router.push('/auth');
+    router.push('/');
   };
 
   if (!user) return null;
@@ -47,6 +49,10 @@ export function Navbar() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setShowTimePeriod(true)}>
+                <Clock className="mr-2 h-4 w-4" />
+                Set Time Period
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setShowSettings(true)}>
                 <Settings className="mr-2 h-4 w-4" />
                 Settings
@@ -63,6 +69,10 @@ export function Navbar() {
       <ProfileSettingsDialog
         open={showSettings}
         onOpenChange={setShowSettings}
+      />
+      <TimePeriodDialog
+        open={showTimePeriod}
+        onOpenChange={setShowTimePeriod}
       />
     </>
   );

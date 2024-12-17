@@ -1,21 +1,39 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { ScrollText } from 'lucide-react';
-import Link from 'next/link';
+import { ScrollText, Chrome } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
 
 export default function Home() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [authLoading, setAuthLoading] = useState(false);
 
   useEffect(() => {
     if (user && !loading) {
       router.push('/timeline');
     }
   }, [user, loading, router]);
+
+  const handleGoogleLogin = async () => {
+    try {
+      setAuthLoading(true);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/timeline`,
+        },
+      });
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
 
   if (loading || user) {
     return null; // Don't show landing page while checking auth or if user is logged in
@@ -32,11 +50,15 @@ export default function Home() {
             Start your journey from June 1st, 1789.
           </p>
           <div className="space-y-4">
-            <Link href="/auth">
-              <Button size="lg" className="bg-blue-500 hover:bg-blue-600">
-                Start Your Journey
-              </Button>
-            </Link>
+            <Button
+              size="lg"
+              className="bg-blue-500 hover:bg-blue-600"
+              onClick={handleGoogleLogin}
+              disabled={authLoading}
+            >
+              <Chrome className="mr-2 h-5 w-5" />
+              {authLoading ? 'Signing in...' : 'Sign in with Google'}
+            </Button>
           </div>
           <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl">
             <FeatureCard

@@ -12,7 +12,7 @@ export async function middleware(req: NextRequest) {
   // Protect all routes under /timeline and /profile
   if ((!session && req.nextUrl.pathname.startsWith('/timeline')) ||
       (!session && req.nextUrl.pathname.startsWith('/profile'))) {
-    return NextResponse.redirect(new URL('/auth', req.url));
+    return NextResponse.redirect(new URL('/', req.url));
   }
 
   return res;

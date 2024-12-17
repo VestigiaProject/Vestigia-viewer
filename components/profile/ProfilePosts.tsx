@@ -2,17 +2,18 @@
 
 import { HistoricalPost } from '@/components/timeline/HistoricalPost';
 import { fetchFigurePosts } from '@/lib/api/figures';
+import { fetchPostInteractions } from '@/lib/api/posts';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useEffect, useState } from 'react';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { HistoricalPostWithFigure } from '@/lib/supabase';
+import type { HistoricalPostWithFigure, UserInteraction } from '@/lib/supabase';
 
-export function ProfilePosts({ 
-  figureId, 
-  currentDate 
-}: { 
+export function ProfilePosts({
+  figureId,
+  currentDate,
+}: {
   figureId: string;
   currentDate: Date;
 }) {
@@ -21,6 +22,7 @@ export function ProfilePosts({
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [userLikes, setUserLikes] = useState<Set<string>>(new Set());
+  const [postInteractions, setPostInteractions] = useState<Record<string, { likes: number; comments: UserInteraction[] }>>({});
 
   useEffect(() => {
     loadPosts();
@@ -30,8 +32,19 @@ export function ProfilePosts({
   async function loadPosts() {
     try {
       const newPosts = await fetchFigurePosts(figureId, currentDate, page);
-      setPosts(prev => [...prev, ...newPosts]);
+      setPosts((prev) => [...prev, ...newPosts]);
       setHasMore(newPosts.length === 10);
+
+      // Load interactions for new posts
+      const interactions = await Promise.all(
+        newPosts.map((post) => fetchPostInteractions(post.id))
+      );
+      const newInteractions = newPosts.reduce((acc, post, index) => {
+        acc[post.id] = interactions[index];
+        return acc;
+      }, {} as Record<string, { likes: number; comments: UserInteraction[] }>);
+
+      setPostInteractions((prev) => ({ ...prev, ...newInteractions }));
     } catch (error) {
       console.error('Error loading posts:', error);
     }
@@ -44,9 +57,9 @@ export function ProfilePosts({
       .select('post_id')
       .eq('user_id', user.id)
       .eq('type', 'like');
-    
+
     if (data) {
-      setUserLikes(new Set(data.map(like => like.post_id)));
+      setUserLikes(new Set(data.map((like) => like.post_id)));
     }
   }
 
@@ -61,8 +74,8 @@ export function ProfilePosts({
         .eq('user_id', user.id)
         .eq('post_id', postId)
         .eq('type', 'like');
-      
-      setUserLikes(prev => {
+
+      setUserLikes((prev) => {
         const next = new Set(prev);
         next.delete(postId);
         return next;
@@ -75,14 +88,34 @@ export function ProfilePosts({
           post_id: postId,
           type: 'like',
         });
-      
-      setUserLikes(prev => new Set([...prev, postId]));
+
+      setUserLikes((prev) => new Set([...prev, postId]));
     }
   }
 
-  function handleComment(postId: string) {
-    // TODO: Implement comment dialog
-    console.log('Comment on post:', postId);
+  async function handleComment(postId: string, content: string) {
+    if (!user) return;
+
+    const { data: comment, error } = await supabase
+      .from('user_interactions')
+      .insert({
+        user_id: user.id,
+        post_id: postId,
+        type: 'comment',
+        content,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    setPostInteractions((prev) => ({
+      ...prev,
+      [postId]: {
+        ...prev[postId],
+        comments: [...prev[postId].comments, comment],
+      },
+    }));
   }
 
   return (
@@ -90,7 +123,7 @@ export function ProfilePosts({
       <InfiniteScroll
         dataLength={posts.length}
         next={() => {
-          setPage(prev => prev + 1);
+          setPage((prev) => prev + 1);
           loadPosts();
         }}
         hasMore={hasMore}
@@ -102,14 +135,15 @@ export function ProfilePosts({
         }
       >
         <div className="space-y-4">
-          {posts.map(post => (
+          {posts.map((post) => (
             <HistoricalPost
               key={post.id}
               post={post}
               onLike={handleLike}
               onComment={handleComment}
-              likes={0}
+              likes={postInteractions[post.id]?.likes || 0}
               isLiked={userLikes.has(post.id)}
+              comments={postInteractions[post.id]?.comments || []}
             />
           ))}
         </div>

@@ -20,7 +20,10 @@ export type HistoricalPost = {
   content: string;
   media_url?: string;
   is_significant: boolean;
-  figure?: HistoricalFigure;
+};
+
+export type HistoricalPostWithFigure = HistoricalPost & {
+  figure: HistoricalFigure;
 };
 
 export type UserProfile = {

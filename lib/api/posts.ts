@@ -1,5 +1,5 @@
 import { supabase } from '../supabase';
-import type { HistoricalPost } from '../supabase';
+import type { HistoricalPostWithFigure } from '../supabase';
 
 export async function fetchPosts(currentDate: Date, page: number = 1, limit: number = 10) {
   const start = (page - 1) * limit;
@@ -15,7 +15,7 @@ export async function fetchPosts(currentDate: Date, page: number = 1, limit: num
     .range(start, start + limit - 1);
 
   if (error) throw error;
-  return data as (HistoricalPost & { figure: HistoricalFigure })[];
+  return data as HistoricalPostWithFigure[];
 }
 
 export async function fetchPostInteractions(postId: string) {

@@ -5,12 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { Heart, MessageCircle } from 'lucide-react';
-import type { HistoricalPost } from '@/lib/supabase';
+import type { HistoricalPostWithFigure } from '@/lib/supabase';
 import Link from 'next/link';
 import { useState } from 'react';
 
 type PostProps = {
-  post: HistoricalPost & { figure: HistoricalFigure };
+  post: HistoricalPostWithFigure;
   onLike: (postId: string) => Promise<void>;
   onComment: (postId: string) => void;
   likes: number;

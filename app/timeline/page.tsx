@@ -9,14 +9,14 @@ import { supabase } from '@/lib/supabase';
 import { useEffect, useState } from 'react';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { HistoricalPost as HistoricalPostType } from '@/lib/supabase';
+import type { HistoricalPostWithFigure } from '@/lib/supabase';
 
 const START_DATE = '1789-06-01';
 
 export default function TimelinePage() {
   const { user } = useAuth();
   const { currentDate, daysElapsed } = useTimeProgress(START_DATE);
-  const [posts, setPosts] = useState<HistoricalPostType[]>([]);
+  const [posts, setPosts] = useState<HistoricalPostWithFigure[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);

@@ -10,12 +10,9 @@ export async function GET(request: Request) {
     const supabase = createRouteHandlerClient({ cookies });
     
     // Exchange the code for a session
-    await supabase.auth.exchangeCodeForSession(code);
-
-    // Get the user from the newly created session
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session }, error: authError } = await supabase.auth.exchangeCodeForSession(code);
     
-    if (session?.user) {
+    if (session) {
       // Check if user profile exists
       const { data: profile } = await supabase
         .from('user_profiles')
@@ -25,16 +22,16 @@ export async function GET(request: Request) {
 
       // If profile doesn't exist, create it
       if (!profile) {
-        const { error } = await supabase
+        const { error: profileError } = await supabase
           .from('user_profiles')
           .insert({
             id: session.user.id,
-            username: session.user.email?.split('@')[0] || `user_${Date.now()}`,
+            username: session.user.email?.split('@')[0] || `user_${session.user.id.slice(0, 8)}`,
             start_date: new Date('1789-06-01').toISOString()
           });
 
-        if (error) {
-          console.error('Error creating user profile:', error);
+        if (profileError) {
+          console.error('Error creating user profile:', profileError);
         }
       }
     }

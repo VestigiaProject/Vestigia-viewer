@@ -1,10 +1,8 @@
-'use client';
-
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { HistoricalPost } from '@/lib/supabase';
+import { PostWithFigure } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
 import { Heart, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
@@ -12,7 +10,7 @@ import { useState } from 'react';
 import { CommentDialog } from './CommentDialog';
 
 interface PostCardProps {
-  post: HistoricalPost & { figure: HistoricalFigure };
+  post: PostWithFigure;
   onLike: () => Promise<void>;
   onComment: (content: string) => Promise<void>;
 }

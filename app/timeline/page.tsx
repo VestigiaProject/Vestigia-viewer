@@ -5,14 +5,14 @@ import { PostCard } from '@/components/posts/PostCard';
 import { commentOnPost, fetchPosts, likePost } from '@/lib/api/posts';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useTimeProgress } from '@/lib/hooks/useTimeProgress';
-import { HistoricalPost } from '@/lib/supabase';
+import { PostWithFigure } from '@/lib/types';
 import { useEffect, useState } from 'react';
 import InfiniteScroll from 'react-infinite-scroll-component';
 
 const START_DATE = '1789-06-01T00:00:00Z';
 
 export default function TimelinePage() {
-  const [posts, setPosts] = useState<(HistoricalPost & { figure: HistoricalFigure })[]>([]);
+  const [posts, setPosts] = useState<PostWithFigure[]>([]);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const currentDate = useTimeProgress(START_DATE);

@@ -1,5 +1,5 @@
 import { supabase } from '../supabase';
-import type { HistoricalPost } from '../supabase';
+import type { PostWithFigure } from '../types';
 
 export async function fetchPosts(currentDate: Date, page: number = 0, limit: number = 10) {
   const { data, error } = await supabase
@@ -13,7 +13,7 @@ export async function fetchPosts(currentDate: Date, page: number = 0, limit: num
     .range(page * limit, (page + 1) * limit - 1);
 
   if (error) throw error;
-  return data as (HistoricalPost & { figure: HistoricalFigure })[];
+  return data as PostWithFigure[];
 }
 
 export async function likePost(userId: string, postId: string) {

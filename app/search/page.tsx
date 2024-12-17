@@ -8,12 +8,13 @@ import { useState } from 'react';
 import { PostCard } from '@/components/posts/PostCard';
 import { commentOnPost, likePost } from '@/lib/api/posts';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { PostWithFigure } from '@/lib/types';
 
 const START_DATE = '1789-06-01T00:00:00Z';
 
 export default function SearchPage() {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<PostWithFigure[]>([]);
   const currentDate = useTimeProgress(START_DATE);
   const { user } = useAuth();
 
@@ -39,7 +40,7 @@ export default function SearchPage() {
       return;
     }
 
-    setResults(data);
+    setResults(data as PostWithFigure[]);
   };
 
   const handleLike = async (postId: string) => {

@@ -24,7 +24,7 @@ export function ProfileSettingsDialog({
   open,
   onOpenChange,
 }: ProfileSettingsDialogProps) {
-  const { user } = useAuth();
+  const { user, refreshSession } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [username, setUsername] = useState('');
@@ -99,6 +99,9 @@ export function ProfileSettingsDialog({
       });
 
       if (metadataError) throw metadataError;
+
+      // Refresh the session to get updated user metadata
+      await refreshSession();
 
       toast({
         title: 'Profile updated',

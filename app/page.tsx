@@ -1,8 +1,26 @@
+'use client';
+
 import { Button } from '@/components/ui/button';
 import { ScrollText } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function Home() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (user && !loading) {
+      router.push('/timeline');
+    }
+  }, [user, loading, router]);
+
+  if (loading || user) {
+    return null; // Don't show landing page while checking auth or if user is logged in
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white">
       <div className="container mx-auto px-4 py-16">

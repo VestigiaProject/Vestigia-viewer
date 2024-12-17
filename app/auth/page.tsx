@@ -5,11 +5,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { supabase } from '@/lib/supabase';
 import { Chrome } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 export default function AuthPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const { user, loading: authLoading } = useAuth();
+
+  useEffect(() => {
+    if (user && !authLoading) {
+      router.push('/timeline');
+    }
+  }, [user, authLoading, router]);
 
   const handleGoogleLogin = async () => {
     try {
@@ -27,6 +35,10 @@ export default function AuthPage() {
       setLoading(false);
     }
   };
+
+  if (authLoading || user) {
+    return null; // Don't show auth page while checking auth or if user is logged in
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-900 to-gray-800 p-4">

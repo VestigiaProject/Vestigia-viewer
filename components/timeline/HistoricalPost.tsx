@@ -9,6 +9,7 @@ import type { HistoricalPostWithFigure, UserInteraction } from '@/lib/supabase';
 import Link from 'next/link';
 import { useState } from 'react';
 import { CommentDialog } from './CommentDialog';
+import { useToast } from '@/components/ui/use-toast';
 
 type PostProps = {
   post: HistoricalPostWithFigure;
@@ -32,6 +33,7 @@ export function HistoricalPost({
   const [loading, setLoading] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [postComments, setPostComments] = useState(comments);
+  const { toast } = useToast();
 
   const handleLike = async () => {
     if (loading) return;
@@ -40,25 +42,37 @@ export function HistoricalPost({
       await onLike(post.id);
       setLiked(!liked);
       setLikeCount((prev) => (liked ? prev - 1 : prev + 1));
+    } catch (error) {
+      console.error('Error liking post:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to like post. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const handleAddComment = async (content: string) => {
-    await onComment(post.id, content);
-    // Optimistically update the UI
-    setPostComments((prev) => [
-      ...prev,
-      {
-        id: Date.now().toString(),
-        content,
-        created_at: new Date().toISOString(),
-        type: 'comment',
-        user_id: '',
-        post_id: post.id,
-      },
-    ]);
+    try {
+      await onComment(post.id, content);
+      // Optimistically update the UI
+      setPostComments((prev) => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          content,
+          created_at: new Date().toISOString(),
+          type: 'comment',
+          user_id: '',
+          post_id: post.id,
+        },
+      ]);
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      throw error; // Let CommentDialog handle the error
+    }
   };
 
   return (
@@ -88,7 +102,7 @@ export function HistoricalPost({
                 {format(new Date(post.original_date), 'MMM d, yyyy')}
               </span>
             </div>
-            <p className="text-sm">{post.content}</p>
+            <p className="text-sm whitespace-pre-wrap">{post.content}</p>
             {post.media_url && (
               <img
                 src={post.media_url}
@@ -104,7 +118,7 @@ export function HistoricalPost({
                 onClick={handleLike}
                 disabled={loading}
               >
-                <Heart className="h-4 w-4" />
+                <Heart className={`h-4 w-4 ${liked ? 'fill-current' : ''}`} />
                 <span>{likeCount}</span>
               </Button>
               <Button

@@ -1,5 +1,3 @@
-'use client';
-
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -80,6 +78,7 @@ export function CommentDialog({
               comments.map((comment) => (
                 <div key={comment.id} className="flex space-x-2 mb-4">
                   <Avatar className="h-8 w-8">
+                    <AvatarImage src={comment.avatar_url} />
                     <AvatarFallback>{comment.username?.[0].toUpperCase() || 'U'}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
@@ -123,4 +122,3 @@ export function CommentDialog({
       </DialogContent>
     </Dialog>
   );
-}

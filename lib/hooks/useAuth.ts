@@ -26,12 +26,5 @@ export function useAuth() {
     };
   }, [router]);
 
-  const refreshSession = async () => {
-    const { data: { session } } = await supabase.auth.refreshSession();
-    if (session) {
-      setUser(session.user);
-    }
-  };
-
-  return { user, loading, refreshSession };
+  return { user, loading };
 }

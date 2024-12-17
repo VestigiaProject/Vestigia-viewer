@@ -29,7 +29,10 @@ export async function fetchPostInteractions(postId: string) {
     .from('user_interactions')
     .select(`
       *,
-      user:user_profiles!user_interactions_user_id_fkey(username)
+      user:user_profiles!user_interactions_user_id_fkey(
+        username,
+        avatar_url
+      )
     `)
     .eq('post_id', postId)
     .eq('type', 'comment')
@@ -41,7 +44,8 @@ export async function fetchPostInteractions(postId: string) {
     likes: likes?.length || 0,
     comments: comments?.map(comment => ({
       ...comment,
-      username: comment.user?.username
+      username: comment.user?.username,
+      avatar_url: comment.user?.avatar_url
     })) || [],
   };
 }

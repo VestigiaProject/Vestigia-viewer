@@ -29,6 +29,7 @@ export type HistoricalPostWithFigure = HistoricalPost & {
 export type UserProfile = {
   id: string;
   username: string;
+  avatar_url?: string;
   start_date: string;
 };
 
@@ -39,5 +40,6 @@ export type UserInteraction = {
   type: 'comment' | 'like';
   content?: string;
   created_at: string;
-  username?: string; // Added for comment display
+  username?: string;
+  avatar_url?: string;
 };

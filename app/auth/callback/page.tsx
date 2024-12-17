@@ -33,11 +33,11 @@ export default function AuthCallbackPage() {
                   start_date: new Date('1789-06-01').toISOString()
                 });
             }
+
+            // Redirect to timeline after successful authentication
+            router.push('/timeline');
           }
         }
-        
-        // Redirect to timeline after successful authentication
-        router.push('/timeline');
       } catch (error) {
         console.error('Error in auth callback:', error);
         router.push('/auth');

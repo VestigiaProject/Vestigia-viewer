@@ -1,3 +1,6 @@
+import { createClient } from '@supabase/supabase-js';
+import { generateStaticParams } from './generateStaticParams';
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -16,6 +19,8 @@ import { useToast } from '@/components/ui/use-toast';
 import type { HistoricalFigure, HistoricalPostWithFigure, UserInteraction } from '@/lib/supabase';
 
 const START_DATE = '1789-06-01';
+
+export { generateStaticParams };
 
 export default function ProfilePage() {
   const params = useParams();

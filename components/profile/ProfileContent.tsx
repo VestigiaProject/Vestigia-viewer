@@ -4,7 +4,7 @@ import { ProfileHeader } from './ProfileHeader';
 import { ProfilePosts } from './ProfilePosts';
 import { useTimeProgress } from '@/lib/hooks/useTimeProgress';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { fetchFigureProfile } from '@/lib/api/figures';
+import { fetchFigureProfile, fetchFigurePostCount } from '@/lib/api/figures';
 import { useEffect, useState } from 'react';
 import type { HistoricalFigure } from '@/lib/supabase';
 
@@ -13,6 +13,7 @@ const START_DATE = '1789-06-01';
 export function ProfileContent({ id }: { id: string }) {
   const { currentDate } = useTimeProgress(START_DATE);
   const [figure, setFigure] = useState<HistoricalFigure | null>(null);
+  const [postCount, setPostCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,8 +22,12 @@ export function ProfileContent({ id }: { id: string }) {
 
   async function loadProfile() {
     try {
-      const profile = await fetchFigureProfile(id);
+      const [profile, count] = await Promise.all([
+        fetchFigureProfile(id),
+        fetchFigurePostCount(id, currentDate)
+      ]);
       setFigure(profile);
+      setPostCount(count);
     } catch (error) {
       console.error('Error loading profile:', error);
     } finally {
@@ -44,7 +49,7 @@ export function ProfileContent({ id }: { id: string }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <ProfileHeader figure={figure} />
+      <ProfileHeader figure={figure} postCount={postCount} />
       <ProfilePosts figureId={id} currentDate={currentDate} />
     </div>
   );

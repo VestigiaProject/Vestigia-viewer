@@ -7,17 +7,21 @@ import { useUserProfile } from './useUserProfile';
 export function useTimeProgress(defaultStartDate: string) {
   const { profile } = useUserProfile();
   const [currentDate, setCurrentDate] = useState<Date>(() => {
-    // Start with the default date until we load the user's profile
     return new Date(defaultStartDate);
   });
 
   useEffect(() => {
-    if (profile?.start_date) {
-      // Calculate elapsed days since user started
+    if (profile?.start_date && profile?.created_at) {
+      // Calculate elapsed time since user created their account
       const startDate = parseISO(profile.start_date);
+      const createdAt = parseISO(profile.created_at);
       const now = new Date();
-      const elapsedDays = Math.floor(differenceInDays(now, startDate) / 365); // Slow down time by making 1 real day = 1 year
-      setCurrentDate(addDays(startDate, elapsedDays));
+      
+      // Calculate days elapsed since account creation
+      const realDaysElapsed = differenceInDays(now, createdAt);
+      
+      // Add elapsed days to the historical start date
+      setCurrentDate(addDays(startDate, realDaysElapsed));
     }
   }, [profile]);
 

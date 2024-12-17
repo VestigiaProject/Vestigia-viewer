@@ -20,10 +20,28 @@ export function PostComments({ postId }: PostCommentsProps) {
   const [comments, setComments] = useState<UserInteraction[]>([]);
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
+  const [userProfile, setUserProfile] = useState<{ username: string; avatar_url: string | null } | null>(null);
 
   useEffect(() => {
     loadComments();
-  }, [postId]);
+    if (user) {
+      loadUserProfile();
+    }
+  }, [postId, user]);
+
+  async function loadUserProfile() {
+    if (!user) return;
+    
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('username, avatar_url')
+      .eq('id', user.id)
+      .single();
+
+    if (profile) {
+      setUserProfile(profile);
+    }
+  }
 
   async function loadComments() {
     const { data: comments } = await supabase
@@ -49,7 +67,7 @@ export function PostComments({ postId }: PostCommentsProps) {
   }
 
   const handleSubmit = async () => {
-    if (!user || !content.trim() || loading) return;
+    if (!user || !content.trim() || loading || !userProfile) return;
     
     setLoading(true);
     try {
@@ -66,10 +84,11 @@ export function PostComments({ postId }: PostCommentsProps) {
 
       if (error) throw error;
 
+      // Add the new comment with the user's profile information
       setComments(prev => [...prev, {
         ...comment,
-        username: user.user_metadata.username,
-        avatar_url: user.user_metadata.avatar_url
+        username: userProfile.username,
+        avatar_url: userProfile.avatar_url
       }]);
       setContent('');
       
@@ -89,29 +108,47 @@ export function PostComments({ postId }: PostCommentsProps) {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
+  };
+
   return (
     <div id="comments" className="space-y-6">
       <h2 className="text-2xl font-semibold">Comments</h2>
       
       <div className="space-y-4">
-        <Textarea
-          placeholder="Write a comment..."
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          className="resize-none"
-          rows={3}
-          maxLength={500}
-        />
-        <div className="flex justify-between items-center">
-          <span className="text-xs text-muted-foreground">
-            {content.length}/500 characters
-          </span>
-          <Button
-            onClick={handleSubmit}
-            disabled={!content.trim() || loading}
-          >
-            {loading ? 'Posting...' : 'Post Comment'}
-          </Button>
+        <div className="flex gap-4">
+          <Avatar className="h-10 w-10">
+            <AvatarImage src={userProfile?.avatar_url || undefined} />
+            <AvatarFallback>
+              {userProfile?.username?.[0].toUpperCase() || 'U'}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1">
+            <Textarea
+              placeholder="Write a comment..."
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="resize-none"
+              rows={3}
+              maxLength={500}
+            />
+            <div className="flex justify-between items-center mt-2">
+              <span className="text-xs text-muted-foreground">
+                {content.length}/500 characters
+              </span>
+              <Button
+                onClick={handleSubmit}
+                disabled={!content.trim() || loading}
+              >
+                {loading ? 'Posting...' : 'Post Comment'}
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -124,7 +161,7 @@ export function PostComments({ postId }: PostCommentsProps) {
           comments.map((comment) => (
             <div key={comment.id} className="flex space-x-4">
               <Avatar className="h-10 w-10">
-                <AvatarImage src={comment.avatar_url} />
+                <AvatarImage src={comment.avatar_url || undefined} />
                 <AvatarFallback>{comment.username?.[0].toUpperCase() || 'U'}</AvatarFallback>
               </Avatar>
               <div className="flex-1">

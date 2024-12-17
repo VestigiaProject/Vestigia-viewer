@@ -14,15 +14,27 @@ export default function AuthPage() {
   const handleGoogleLogin = async () => {
     try {
       setLoading(true);
-      const { error } = await supabase.auth.signInWithOAuth({
+      console.log('Initiating Google login...');
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/timeline`,
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
         },
       });
-      if (error) throw error;
+
+      if (error) {
+        console.error('OAuth error:', error);
+        throw error;
+      }
+
+      console.log('OAuth initiated:', data);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Login error:', error);
     } finally {
       setLoading(false);
     }

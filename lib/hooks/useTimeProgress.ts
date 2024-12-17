@@ -8,16 +8,16 @@ export function useTimeProgress(defaultStartDate: string) {
   const { profile } = useUserProfile();
   const [currentDate, setCurrentDate] = useState<Date>(() => {
     // Start with the default date until we load the user's profile
-    const start = new Date(defaultStartDate);
-    const elapsed = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
-    return addDays(start, elapsed);
+    return new Date(defaultStartDate);
   });
 
   useEffect(() => {
     if (profile?.start_date) {
+      // Calculate elapsed days since user started
       const startDate = parseISO(profile.start_date);
-      const elapsed = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
-      setCurrentDate(addDays(startDate, elapsed));
+      const now = new Date();
+      const elapsedDays = Math.floor(differenceInDays(now, startDate) / 365); // Slow down time by making 1 real day = 1 year
+      setCurrentDate(addDays(startDate, elapsedDays));
     }
   }, [profile]);
 

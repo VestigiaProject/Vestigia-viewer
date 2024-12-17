@@ -29,8 +29,8 @@ export async function GET(request: Request) {
           .from('user_profiles')
           .insert({
             id: session.user.id,
-            username: session.user.email?.split('@')[0], // Use email prefix as username
-            start_date: new Date('1789-06-01').toISOString(),
+            username: session.user.email?.split('@')[0] || `user_${Date.now()}`,
+            start_date: new Date('1789-06-01').toISOString()
           });
 
         if (profileError) {
@@ -41,7 +41,7 @@ export async function GET(request: Request) {
   }
 
   // Redirect to the timeline page
-  return NextResponse.redirect(new URL('/timeline', requestUrl.origin));
+  return NextResponse.redirect(new URL('/timeline', request.url));
 }
 
 export const dynamic = 'force-dynamic';

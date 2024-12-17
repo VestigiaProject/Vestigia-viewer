@@ -11,9 +11,11 @@ import InfiniteScroll from 'react-infinite-scroll-component';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { HistoricalPostWithFigure, UserInteraction } from '@/lib/supabase';
 
+const START_DATE = '1789-06-01';
+
 export default function TimelinePage() {
   const { user } = useAuth();
-  const { currentDate, daysElapsed } = useTimeProgress();
+  const { currentDate, daysElapsed } = useTimeProgress(START_DATE);
   const [posts, setPosts] = useState<HistoricalPostWithFigure[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -22,38 +24,17 @@ export default function TimelinePage() {
   const [postInteractions, setPostInteractions] = useState<Record<string, { likes: number; comments: UserInteraction[] }>>({});
 
   useEffect(() => {
-    if (currentDate) {
-      loadPosts();
-      loadUserLikes();
-    }
-  }, [currentDate]);
-
-  async function loadUserLikes() {
-    if (!user) return;
-    
-    try {
-      const { data } = await supabase
-        .from('user_interactions')
-        .select('post_id')
-        .eq('user_id', user.id)
-        .eq('type', 'like');
-
-      if (data) {
-        setUserLikes(new Set(data.map((like) => like.post_id)));
-      }
-    } catch (error) {
-      console.error('Error loading user likes:', error);
-    }
-  }
+    loadPosts();
+    loadUserLikes();
+  }, []);
 
   async function loadPosts() {
-    if (!currentDate) return;
-    
     try {
       const newPosts = await fetchPosts(currentDate, page);
       setPosts((prev) => [...prev, ...newPosts]);
       setHasMore(newPosts.length === 10);
       
+      // Load interactions for new posts
       const interactions = await Promise.all(
         newPosts.map((post) => fetchPostInteractions(post.id))
       );
@@ -70,77 +51,72 @@ export default function TimelinePage() {
     }
   }
 
+  async function loadUserLikes() {
+    if (!user) return;
+    const { data } = await supabase
+      .from('user_interactions')
+      .select('post_id')
+      .eq('user_id', user.id)
+      .eq('type', 'like');
+
+    if (data) {
+      setUserLikes(new Set(data.map((like) => like.post_id)));
+    }
+  }
+
   async function handleLike(postId: string) {
     if (!user) return;
 
-    try {
-      const isLiked = userLikes.has(postId);
-      if (isLiked) {
-        await supabase
-          .from('user_interactions')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('post_id', postId)
-          .eq('type', 'like');
+    const isLiked = userLikes.has(postId);
+    if (isLiked) {
+      await supabase
+        .from('user_interactions')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('post_id', postId)
+        .eq('type', 'like');
 
-        setUserLikes((prev) => {
-          const next = new Set(prev);
-          next.delete(postId);
-          return next;
+      setUserLikes((prev) => {
+        const next = new Set(prev);
+        next.delete(postId);
+        return next;
+      });
+    } else {
+      await supabase
+        .from('user_interactions')
+        .insert({
+          user_id: user.id,
+          post_id: postId,
+          type: 'like',
         });
-      } else {
-        await supabase
-          .from('user_interactions')
-          .insert({
-            user_id: user.id,
-            post_id: postId,
-            type: 'like',
-          });
 
-        setUserLikes((prev) => new Set([...prev, postId]));
-      }
-
-      // Update the likes count in postInteractions
-      setPostInteractions((prev) => ({
-        ...prev,
-        [postId]: {
-          ...prev[postId],
-          likes: prev[postId].likes + (isLiked ? -1 : 1),
-        },
-      }));
-    } catch (error) {
-      console.error('Error updating like:', error);
+      setUserLikes((prev) => new Set([...prev, postId]));
     }
   }
 
   async function handleComment(postId: string, content: string) {
     if (!user) return;
 
-    try {
-      const { data: comment, error } = await supabase
-        .from('user_interactions')
-        .insert({
-          user_id: user.id,
-          post_id: postId,
-          type: 'comment',
-          content,
-        })
-        .select()
-        .single();
+    const { data: comment, error } = await supabase
+      .from('user_interactions')
+      .insert({
+        user_id: user.id,
+        post_id: postId,
+        type: 'comment',
+        content,
+      })
+      .select()
+      .single();
 
-      if (error) throw error;
+    if (error) throw error;
 
-      setPostInteractions((prev) => ({
-        ...prev,
-        [postId]: {
-          ...prev[postId],
-          comments: [...prev[postId].comments, comment],
-        },
-      }));
-    } catch (error) {
-      console.error('Error adding comment:', error);
-      throw error;
-    }
+    setPostInteractions((prev) => ({
+      ...prev,
+      [postId]: {
+        ...prev[postId],
+        comments: [...prev[postId].comments, comment],
+      },
+    }));
   }
 
   return (

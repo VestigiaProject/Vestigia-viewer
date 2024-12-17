@@ -3,25 +3,24 @@
 import { ProfileHeader } from './ProfileHeader';
 import { ProfilePosts } from './ProfilePosts';
 import { useTimeProgress } from '@/lib/hooks/useTimeProgress';
+import { useAuth } from '@/lib/hooks/useAuth';
 import { fetchFigureProfile, fetchFigurePostCount } from '@/lib/api/figures';
 import { useEffect, useState } from 'react';
 import type { HistoricalFigure } from '@/lib/supabase';
 
+const START_DATE = '1789-06-01';
+
 export function ProfileContent({ id }: { id: string }) {
-  const { currentDate } = useTimeProgress();
+  const { currentDate } = useTimeProgress(START_DATE);
   const [figure, setFigure] = useState<HistoricalFigure | null>(null);
   const [postCount, setPostCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (currentDate) {
-      loadProfile();
-    }
-  }, [id, currentDate]);
+    loadProfile();
+  }, [id]);
 
   async function loadProfile() {
-    if (!currentDate) return;
-    
     try {
       const [profile, count] = await Promise.all([
         fetchFigureProfile(id),

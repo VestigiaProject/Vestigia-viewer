@@ -1,23 +1,24 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-
-const MILLISECONDS_PER_HISTORICAL_SECOND = 1000; // 1 real second = 1 historical second
+import { addDays, differenceInDays } from 'date-fns';
 
 export function useTimeProgress(startDate: string) {
-  const [currentDate, setCurrentDate] = useState<Date>(new Date(startDate));
+  const [currentDate, setCurrentDate] = useState<Date>(() => {
+    const start = new Date(startDate);
+    const elapsed = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
+    return addDays(start, elapsed);
+  });
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentDate(prevDate => {
-        const newDate = new Date(prevDate);
-        newDate.setSeconds(newDate.getSeconds() + 1);
-        return newDate;
-      });
-    }, MILLISECONDS_PER_HISTORICAL_SECOND);
+    const timer = setInterval(() => {
+      setCurrentDate(prev => addDays(prev, 1));
+    }, 24 * 60 * 60 * 1000); // Update every 24 hours
 
-    return () => clearInterval(interval);
+    return () => clearInterval(timer);
   }, []);
 
-  return currentDate;
+  const daysElapsed = differenceInDays(currentDate, new Date(startDate));
+
+  return { currentDate, daysElapsed };
 }

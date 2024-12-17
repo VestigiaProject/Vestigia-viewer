@@ -1,74 +1,131 @@
 'use client';
 
-import { Header } from '@/components/layout/Header';
-import { PostCard } from '@/components/posts/PostCard';
-import { commentOnPost, fetchPosts, likePost } from '@/lib/api/posts';
-import { useAuth } from '@/lib/hooks/useAuth';
+import { TimelineHeader } from '@/components/timeline/TimelineHeader';
+import { HistoricalPost } from '@/components/timeline/HistoricalPost';
 import { useTimeProgress } from '@/lib/hooks/useTimeProgress';
-import { PostWithFigure } from '@/lib/types';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { fetchPosts, fetchPostInteractions } from '@/lib/api/posts';
+import { supabase } from '@/lib/supabase';
 import { useEffect, useState } from 'react';
 import InfiniteScroll from 'react-infinite-scroll-component';
+import { Skeleton } from '@/components/ui/skeleton';
+import type { HistoricalPost as HistoricalPostType } from '@/lib/supabase';
 
-const START_DATE = '1789-06-01T00:00:00Z';
+const START_DATE = '1789-06-01';
 
 export default function TimelinePage() {
-  const [posts, setPosts] = useState<PostWithFigure[]>([]);
-  const [page, setPage] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
-  const currentDate = useTimeProgress(START_DATE);
   const { user } = useAuth();
-
-  const loadPosts = async () => {
-    try {
-      const newPosts = await fetchPosts(currentDate, page);
-      if (newPosts.length < 10) setHasMore(false);
-      setPosts(prev => [...prev, ...newPosts]);
-      setPage(prev => prev + 1);
-    } catch (error) {
-      console.error('Error loading posts:', error);
-    }
-  };
+  const { currentDate, daysElapsed } = useTimeProgress(START_DATE);
+  const [posts, setPosts] = useState<HistoricalPostType[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [userLikes, setUserLikes] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadPosts();
+    loadUserLikes();
   }, []);
 
-  const handleLike = async (postId: string) => {
-    if (!user) return;
-    await likePost(user.id, postId);
-  };
+  async function loadPosts() {
+    try {
+      const newPosts = await fetchPosts(currentDate, page);
+      setPosts(prev => [...prev, ...newPosts]);
+      setHasMore(newPosts.length === 10);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error loading posts:', error);
+      setLoading(false);
+    }
+  }
 
-  const handleComment = async (postId: string, content: string) => {
+  async function loadUserLikes() {
     if (!user) return;
-    await commentOnPost(user.id, postId, content);
-  };
+    const { data } = await supabase
+      .from('user_interactions')
+      .select('post_id')
+      .eq('user_id', user.id)
+      .eq('type', 'like');
+    
+    if (data) {
+      setUserLikes(new Set(data.map(like => like.post_id)));
+    }
+  }
+
+  async function handleLike(postId: string) {
+    if (!user) return;
+
+    const isLiked = userLikes.has(postId);
+    if (isLiked) {
+      await supabase
+        .from('user_interactions')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('post_id', postId)
+        .eq('type', 'like');
+      
+      setUserLikes(prev => {
+        const next = new Set(prev);
+        next.delete(postId);
+        return next;
+      });
+    } else {
+      await supabase
+        .from('user_interactions')
+        .insert({
+          user_id: user.id,
+          post_id: postId,
+          type: 'like',
+        });
+      
+      setUserLikes(prev => new Set([...prev, postId]));
+    }
+  }
+
+  function handleComment(postId: string) {
+    // TODO: Implement comment dialog
+    console.log('Comment on post:', postId);
+  }
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-      <main className="container py-6">
-        <div className="max-w-2xl mx-auto">
-          <div className="mb-6 text-center">
-            <div className="text-2xl font-bold">
-              Current Date: {currentDate.toLocaleDateString()}
-            </div>
+      <TimelineHeader currentDate={currentDate} daysElapsed={daysElapsed} />
+      <main className="container max-w-2xl mx-auto py-4">
+        {loading ? (
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <Skeleton key={i} className="h-48 w-full" />
+            ))}
           </div>
+        ) : (
           <InfiniteScroll
             dataLength={posts.length}
-            next={loadPosts}
+            next={() => {
+              setPage(prev => prev + 1);
+              loadPosts();
+            }}
             hasMore={hasMore}
-            loader={<div className="text-center py-4">Loading...</div>}
+            loader={<Skeleton className="h-48 w-full my-4" />}
+            endMessage={
+              <p className="text-center text-muted-foreground py-4">
+                No more historical posts to load
+              </p>
+            }
           >
-            {posts.map(post => (
-              <PostCard
-                key={post.id}
-                post={post}
-                onLike={() => handleLike(post.id)}
-                onComment={(content) => handleComment(post.id, content)}
-              />
-            ))}
+            <div className="space-y-4">
+              {posts.map(post => (
+                <HistoricalPost
+                  key={post.id}
+                  post={post}
+                  onLike={handleLike}
+                  onComment={handleComment}
+                  likes={0} // TODO: Implement likes count
+                  isLiked={userLikes.has(post.id)}
+                />
+              ))}
+            </div>
           </InfiniteScroll>
-        </div>
+        )}
       </main>
     </div>
   );

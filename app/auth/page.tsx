@@ -2,17 +2,25 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { signInWithGoogle } from '@/lib/api/auth';
+import { supabase } from '@/lib/supabase';
 import { Chrome } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 export default function AuthPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   const handleGoogleLogin = async () => {
     try {
       setLoading(true);
-      await signInWithGoogle(`${window.location.origin}/auth/callback`);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/timeline`,
+        },
+      });
+      if (error) throw error;
     } catch (error) {
       console.error('Error:', error);
     } finally {

@@ -1,0 +1,1 @@
+export const START_DATE = '1789-06-01T00:00:00Z';

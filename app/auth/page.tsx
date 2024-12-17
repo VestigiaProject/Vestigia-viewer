@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { supabase } from '@/lib/supabase';
+import { signInWithGoogle } from '@/lib/api/auth';
 import { Chrome } from 'lucide-react';
 import { useState } from 'react';
 
@@ -12,13 +12,7 @@ export default function AuthPage() {
   const handleGoogleLogin = async () => {
     try {
       setLoading(true);
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-      if (error) throw error;
+      await signInWithGoogle(`${window.location.origin}/auth/callback`);
     } catch (error) {
       console.error('Error:', error);
     } finally {

@@ -1,3 +1,15 @@
+import { supabase } from '@/lib/supabase';
+
+export async function generateStaticParams() {
+  const { data: figures } = await supabase
+    .from('historical_figures')
+    .select('id');
+
+  return (figures || []).map((figure) => ({
+    id: figure.id,
+  }));
+}
+
 'use client';
 
 import { ProfileHeader, ProfileHeaderSkeleton } from '@/components/profile/ProfileHeader';

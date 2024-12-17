@@ -1,1 +1,0 @@
-// Delete this file as we're using a client-side approach instead

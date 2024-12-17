@@ -42,14 +42,14 @@ export function ProfileSettingsDialog({
 
     const { data: profile } = await supabase
       .from('user_profiles')
-      .select('username')
+      .select('username, avatar_url')
       .eq('id', user.id)
       .single();
 
     if (profile) {
       setUsername(profile.username);
+      setAvatarUrl(profile.avatar_url || '');
     }
-    setAvatarUrl(user.user_metadata.avatar_url || '');
   };
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -70,6 +70,7 @@ export function ProfileSettingsDialog({
       // Upload new avatar if selected
       if (avatarFile) {
         const fileExt = avatarFile.name.split('.').pop();
+        // Ensure the user.id is properly formatted as a UUID
         const filePath = `${user.id}-${Date.now()}.${fileExt}`;
 
         const { error: uploadError, data } = await supabase.storage
@@ -88,17 +89,13 @@ export function ProfileSettingsDialog({
       // Update user profile
       const { error: profileError } = await supabase
         .from('user_profiles')
-        .update({ username: username.trim() })
+        .update({
+          username: username.trim(),
+          avatar_url: newAvatarUrl
+        })
         .eq('id', user.id);
 
       if (profileError) throw profileError;
-
-      // Update user metadata
-      const { error: metadataError } = await supabase.auth.updateUser({
-        data: { avatar_url: newAvatarUrl }
-      });
-
-      if (metadataError) throw metadataError;
 
       toast({
         title: 'Profile updated',

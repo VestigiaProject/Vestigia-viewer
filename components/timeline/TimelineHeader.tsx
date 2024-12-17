@@ -4,11 +4,13 @@ import { format } from 'date-fns';
 import { Calendar } from 'lucide-react';
 
 type TimelineHeaderProps = {
-  currentDate: Date;
+  currentDate: Date | null;
   daysElapsed: number;
 };
 
 export function TimelineHeader({ currentDate, daysElapsed }: TimelineHeaderProps) {
+  if (!currentDate) return null;
+
   return (
     <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
       <div className="flex items-center justify-between p-4">

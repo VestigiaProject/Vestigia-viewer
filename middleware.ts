@@ -9,9 +9,16 @@ export async function middleware(req: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession();
 
-  // Protect all routes under /timeline and /profile
-  if ((!session && req.nextUrl.pathname.startsWith('/timeline')) ||
-      (!session && req.nextUrl.pathname.startsWith('/profile'))) {
+  // List of protected routes that require authentication
+  const protectedRoutes = ['/timeline', '/profile', '/post'];
+
+  // Check if the current path starts with any protected route
+  const isProtectedRoute = protectedRoutes.some(route => 
+    req.nextUrl.pathname.startsWith(route)
+  );
+
+  // Redirect to home page if trying to access protected route without auth
+  if (isProtectedRoute && !session) {
     return NextResponse.redirect(new URL('/', req.url));
   }
 
@@ -19,5 +26,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/timeline/:path*', '/profile/:path*'],
+  matcher: ['/timeline/:path*', '/profile/:path*', '/post/:path*'],
 };

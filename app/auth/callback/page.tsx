@@ -12,45 +12,71 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     const handleCallback = async () => {
       try {
+        console.log('Starting auth callback...');
         const code = new URL(window.location.href).searchParams.get('code');
+        console.log('Auth code present:', !!code);
         
         if (code) {
+          console.log('Exchanging code for session...');
           const { data: { session }, error: authError } = await supabase.auth.exchangeCodeForSession(code);
           
-          if (authError) throw authError;
+          if (authError) {
+            console.error('Auth error:', authError);
+            throw authError;
+          }
           
           if (session) {
+            console.log('Session obtained:', session.user.id);
+            
             // Check if user profile exists
+            console.log('Checking for existing profile...');
             const { data: profile, error: profileCheckError } = await supabase
               .from('user_profiles')
               .select()
               .eq('id', session.user.id)
               .single();
 
+            console.log('Profile check result:', { profile, error: profileCheckError });
+
             if (profileCheckError && profileCheckError.code !== 'PGRST116') {
+              console.error('Profile check error:', profileCheckError);
               throw profileCheckError;
             }
 
             // If profile doesn't exist, create it
             if (!profile) {
-              const { error: insertError } = await supabase
+              console.log('Creating new profile...');
+              const username = session.user.email?.split('@')[0] || `user_${session.user.id.slice(0, 8)}`;
+              const newProfile = {
+                id: session.user.id,
+                username,
+                start_date: new Date('1789-06-01').toISOString()
+              };
+              console.log('New profile data:', newProfile);
+
+              const { data: insertData, error: insertError } = await supabase
                 .from('user_profiles')
-                .insert({
-                  id: session.user.id,
-                  username: session.user.email?.split('@')[0] || `user_${session.user.id.slice(0, 8)}`,
-                  start_date: new Date('1789-06-01').toISOString()
-                });
+                .insert([newProfile])
+                .select()
+                .single();
+
+              console.log('Insert result:', { data: insertData, error: insertError });
 
               if (insertError) {
+                console.error('Insert error:', insertError);
                 throw insertError;
               }
 
+              console.log('Profile created successfully');
               toast({
                 title: "Welcome!",
                 description: "Your account has been set up successfully.",
               });
+            } else {
+              console.log('Profile already exists');
             }
 
+            console.log('Redirecting to timeline...');
             router.push('/timeline');
           }
         }

@@ -1,25 +1,29 @@
 'use client';
 
-import { TimelineHeader } from '@/components/timeline/TimelineHeader';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { HistoricalPost } from '@/components/timeline/HistoricalPost';
 import { CommentDialog } from '@/components/timeline/CommentDialog';
 import { useTimeProgress } from '@/lib/hooks/useTimeProgress';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { fetchPosts } from '@/lib/api/posts';
+import { fetchFigureProfile, fetchFigurePosts } from '@/lib/api/figures';
 import { fetchPostComments, addComment } from '@/lib/api/interactions';
 import { supabase } from '@/lib/supabase';
 import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/components/ui/use-toast';
-import type { HistoricalPostWithFigure, UserInteraction } from '@/lib/supabase';
+import type { HistoricalFigure, HistoricalPostWithFigure, UserInteraction } from '@/lib/supabase';
 
 const START_DATE = '1789-06-01';
 
-export default function TimelinePage() {
+export default function ProfilePage() {
+  const params = useParams();
+  const figureId = params.id as string;
   const { user } = useAuth();
   const { toast } = useToast();
-  const { currentDate, daysElapsed } = useTimeProgress(START_DATE);
+  const { currentDate } = useTimeProgress(START_DATE);
+  const [figure, setFigure] = useState<HistoricalFigure | null>(null);
   const [posts, setPosts] = useState<HistoricalPostWithFigure[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -29,13 +33,28 @@ export default function TimelinePage() {
   const [comments, setComments] = useState<UserInteraction[]>([]);
 
   useEffect(() => {
+    loadProfile();
     loadPosts();
     loadUserLikes();
-  }, []);
+  }, [figureId]);
+
+  async function loadProfile() {
+    try {
+      const profile = await fetchFigureProfile(figureId);
+      setFigure(profile);
+    } catch (error) {
+      console.error('Error loading profile:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load profile. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  }
 
   async function loadPosts() {
     try {
-      const newPosts = await fetchPosts(currentDate, page);
+      const newPosts = await fetchFigurePosts(figureId, currentDate, page);
       setPosts(prev => [...prev, ...newPosts]);
       setHasMore(newPosts.length === 10);
       setLoading(false);
@@ -128,10 +147,42 @@ export default function TimelinePage() {
     }
   }
 
+  if (!figure && !loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-xl text-muted-foreground">Historical figure not found</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
-      <TimelineHeader currentDate={currentDate} daysElapsed={daysElapsed} />
+      <div className="bg-accent/50">
+        <div className="container max-w-2xl mx-auto py-8">
+          {loading ? (
+            <div className="space-y-4">
+              <Skeleton className="h-32 w-32 rounded-full mx-auto" />
+              <Skeleton className="h-8 w-48 mx-auto" />
+              <Skeleton className="h-4 w-64 mx-auto" />
+              <Skeleton className="h-20 w-full max-w-lg mx-auto" />
+            </div>
+          ) : (
+            figure && (
+              <div className="text-center space-y-4">
+                <Avatar className="h-32 w-32 mx-auto">
+                  <AvatarImage src={figure.profile_image} />
+                  <AvatarFallback>{figure.name[0]}</AvatarFallback>
+                </Avatar>
+                <h1 className="text-2xl font-bold">{figure.name}</h1>
+                <p className="text-muted-foreground">{figure.title}</p>
+                <p className="max-w-lg mx-auto">{figure.biography}</p>
+              </div>
+            )
+          )}
+        </div>
+      </div>
       <main className="container max-w-2xl mx-auto py-4">
+        <h2 className="text-xl font-semibold mb-4">Historical Posts</h2>
         {loading ? (
           <div className="space-y-4">
             {[...Array(3)].map((_, i) => (

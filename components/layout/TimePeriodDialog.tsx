@@ -11,6 +11,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 type TimePeriodOption = {
   date: string;
@@ -86,27 +87,30 @@ export function TimePeriodDialog({ open, onOpenChange }: TimePeriodDialogProps) 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Choose Your Starting Point</DialogTitle>
+          <DialogTitle className="text-xl font-semibold mb-4">Choose Your Starting Point</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
+        <div className="grid gap-3">
           {timePeriods.map((period) => (
-            <Button
+            <div
               key={period.date}
-              variant={period.enabled ? "default" : "outline"}
-              className="w-full justify-start h-auto p-4 space-y-2"
-              onClick={() => handleSelectPeriod(period)}
-              disabled={!period.enabled}
+              className={cn(
+                "relative rounded-lg border p-4 transition-colors",
+                period.enabled
+                  ? "hover:bg-accent cursor-pointer"
+                  : "opacity-50 cursor-not-allowed"
+              )}
+              onClick={() => period.enabled && handleSelectPeriod(period)}
             >
-              <div className="text-left">
-                <div className="font-semibold">{period.label}</div>
-                <div className="text-sm text-muted-foreground">
+              <div className="space-y-1">
+                <h3 className="font-medium leading-none">{period.label}</h3>
+                <p className="text-sm text-muted-foreground">
                   {period.description}
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">
+                </p>
+                <p className="text-xs text-muted-foreground">
                   {format(new Date(period.date), 'MMMM d, yyyy')}
-                </div>
+                </p>
               </div>
-            </Button>
+            </div>
           ))}
         </div>
       </DialogContent>

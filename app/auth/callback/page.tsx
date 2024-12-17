@@ -3,44 +3,52 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { useToast } from '@/components/ui/use-toast';
 
 export default function AuthCallbackPage() {
   const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        // Get the code from the URL
         const code = new URL(window.location.href).searchParams.get('code');
         
-        if (code) {
-          // Exchange the code for a session
-          const { data: { session }, error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
-          if (sessionError) throw sessionError;
+        if (!code) {
+          throw new Error('No code provided');
+        }
 
-          if (session?.user) {
-            // Check if user profile exists
-            const { data: profile } = await supabase
-              .from('user_profiles')
-              .select()
-              .eq('id', session.user.id)
-              .single();
+        // Exchange the code for a session
+        const { data: { session }, error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
+        if (sessionError) throw sessionError;
 
-            // If profile doesn't exist, create it
-            if (!profile) {
-              const { error: profileError } = await supabase
-                .from('user_profiles')
-                .insert({
-                  id: session.user.id,
-                  username: session.user.email?.split('@')[0] || `user_${Date.now()}`,
-                  start_date: new Date('1789-06-01').toISOString()
-                });
+        if (!session?.user) {
+          throw new Error('No user in session');
+        }
 
-              if (profileError) {
-                console.error('Error creating user profile:', profileError);
-              }
+        // Create user profile
+        const { error: profileError } = await supabase
+          .from('user_profiles')
+          .upsert(
+            {
+              id: session.user.id,
+              username: session.user.email?.split('@')[0] || `user_${Date.now()}`,
+              start_date: new Date('1789-06-01').toISOString()
+            },
+            {
+              onConflict: 'id',
+              ignoreDuplicates: true
             }
-          }
+          );
+
+        if (profileError) {
+          console.error('Error creating user profile:', profileError);
+          toast({
+            title: 'Error',
+            description: 'Failed to create user profile. Please try again.',
+            variant: 'destructive',
+          });
+          throw profileError;
         }
 
         // Redirect to timeline
@@ -52,7 +60,7 @@ export default function AuthCallbackPage() {
     };
 
     handleCallback();
-  }, [router]);
+  }, [router, toast]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">

@@ -4,6 +4,7 @@ import * as React from 'react';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../supabase';
 import { useAuth } from './useAuth';
+import { useToast } from '@/components/ui/use-toast';
 
 type Language = 'fr' | 'en';
 
@@ -24,6 +25,7 @@ const getInitialLanguage = (): Language => {
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [language, setLanguageState] = useState<Language>(getInitialLanguage);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -43,11 +45,13 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       }
 
       try {
-        const { data: profile } = await supabase
+        const { data: profile, error: fetchError } = await supabase
           .from('user_profiles')
           .select('language')
           .eq('id', user.id)
           .single();
+
+        if (fetchError) throw fetchError;
 
         if (profile?.language) {
           const profileLanguage = profile.language as Language;
@@ -55,40 +59,71 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
           localStorage.setItem('language', profileLanguage);
         } else {
           // If user has no language preference set, save the current one
-          const { error } = await supabase
+          const { error: updateError } = await supabase
             .from('user_profiles')
             .update({ language })
             .eq('id', user.id);
 
-          if (error) throw error;
+          if (updateError) {
+            console.error('Error setting initial language:', updateError);
+            toast({
+              title: 'Error',
+              description: 'Failed to save language preference. Please try again.',
+              variant: 'destructive',
+            });
+          }
         }
       } catch (error) {
         console.error('Error loading language preference:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load language preference. Using default.',
+          variant: 'destructive',
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
     loadLanguagePreference();
-  }, [user, language]);
+  }, [user, language, toast]);
 
   // Save language preference to user profile and localStorage
   const setLanguage = async (newLanguage: Language) => {
-    // Always update state and localStorage immediately
-    setLanguageState(newLanguage);
-    localStorage.setItem('language', newLanguage);
-
-    if (!user) return;
+    setIsLoading(true);
 
     try {
+      if (!user) {
+        setLanguageState(newLanguage);
+        localStorage.setItem('language', newLanguage);
+        return;
+      }
+
       const { error } = await supabase
         .from('user_profiles')
         .update({ language: newLanguage })
         .eq('id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
+
+      setLanguageState(newLanguage);
+      localStorage.setItem('language', newLanguage);
+      
+      toast({
+        title: 'Success',
+        description: newLanguage === 'en' ? 'Switched to English' : 'Passé en français',
+      });
     } catch (error) {
       console.error('Error updating language preference:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update language preference. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 

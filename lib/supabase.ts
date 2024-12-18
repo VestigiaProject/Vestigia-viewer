@@ -35,6 +35,19 @@ export type UserProfile = {
   created_at: string;
 };
 
+export type CommentWithUser = {
+  id: string;
+  user_id: string;
+  post_id: string;
+  type: 'comment';
+  content: string;
+  created_at: string;
+  user: {
+    username: string;
+    avatar_url: string | null;
+  } | null;
+};
+
 export type UserInteraction = {
   id: string;
   user_id: string;

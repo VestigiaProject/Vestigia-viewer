@@ -99,14 +99,38 @@ interface RawCommentResponse {
   }[];
 }
 
-export async function fetchPostInteractions(postId: string) {
-  const { data: likes } = await supabase
+interface PostInteractions {
+  likes: number;
+  comments: UserInteraction[];
+  isLiked?: boolean;
+}
+
+export async function fetchPostInteractions(postId: string, userId?: string): Promise<PostInteractions> {
+  // Get likes count
+  const { count: likesCount, error: likesError } = await supabase
     .from('user_interactions')
-    .select('id')
+    .select('*', { count: 'exact', head: true })
     .eq('post_id', postId)
     .eq('type', 'like');
 
-  const { data: comments } = await supabase
+  if (likesError) throw likesError;
+
+  // Check if current user has liked the post
+  let isLiked = false;
+  if (userId) {
+    const { data: likeData } = await supabase
+      .from('user_interactions')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('post_id', postId)
+      .eq('type', 'like')
+      .single();
+    
+    isLiked = !!likeData;
+  }
+
+  // Get comments with user info
+  const { data: comments, error: commentsError } = await supabase
     .from('user_interactions')
     .select(`
       id,
@@ -124,7 +148,9 @@ export async function fetchPostInteractions(postId: string) {
     .eq('type', 'comment')
     .order('created_at', { ascending: true });
 
-  const mappedComments = comments?.map((comment: RawCommentResponse) => ({
+  if (commentsError) throw commentsError;
+
+  const mappedComments = (comments || []).map(comment => ({
     id: comment.id,
     user_id: comment.user_id,
     post_id: comment.post_id,
@@ -133,10 +159,11 @@ export async function fetchPostInteractions(postId: string) {
     created_at: comment.created_at,
     username: comment.user[0].username,
     avatar_url: comment.user[0].avatar_url || undefined
-  })) || [];
+  }));
 
   return {
-    likes: likes?.length || 0,
-    comments: mappedComments
+    likes: likesCount || 0,
+    comments: mappedComments,
+    isLiked
   };
 }

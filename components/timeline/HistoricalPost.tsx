@@ -8,11 +8,14 @@ import { Heart, MessageCircle } from 'lucide-react';
 import type { HistoricalPostWithFigure, UserInteraction } from '@/lib/supabase';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useLanguage } from '@/lib/hooks/useLanguage';
 import { useTranslation } from '@/lib/hooks/useTranslation';
 import { fr } from 'date-fns/locale';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { supabase } from '@/lib/supabase';
+import { fetchPostInteractions } from '@/lib/api/posts';
 
 type PostProps = {
   post: HistoricalPostWithFigure;
@@ -27,25 +30,70 @@ export function HistoricalPost({
   post,
   onLike,
   onComment,
-  likes,
-  isLiked,
-  comments,
+  likes: initialLikes,
+  isLiked: initialIsLiked,
+  comments: initialComments,
 }: PostProps) {
   const router = useRouter();
+  const { user } = useAuth();
   const { language } = useLanguage();
   const { t } = useTranslation();
-  const [likeCount, setLikeCount] = useState(likes);
-  const [liked, setLiked] = useState(isLiked);
+  const [likeCount, setLikeCount] = useState(initialLikes);
+  const [liked, setLiked] = useState(initialIsLiked);
+  const [comments, setComments] = useState(initialComments);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
+  // Subscribe to real-time updates
+  useEffect(() => {
+    const channel = supabase
+      .channel(`post-${post.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_interactions',
+          filter: `post_id=eq.${post.id}`,
+        },
+        async () => {
+          // Refresh interactions when changes occur
+          const interactions = await fetchPostInteractions(post.id, user?.id);
+          setLikeCount(interactions.likes);
+          setLiked(interactions.isLiked || false);
+          setComments(interactions.comments);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [post.id, user?.id]);
+
   const handleLike = async () => {
-    if (loading) return;
+    if (!user || loading) return;
     setLoading(true);
+
     try {
-      await onLike(post.id);
-      setLiked(!liked);
-      setLikeCount((prev) => (liked ? prev - 1 : prev + 1));
+      if (liked) {
+        await supabase
+          .from('user_interactions')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('post_id', post.id)
+          .eq('type', 'like');
+      } else {
+        await supabase
+          .from('user_interactions')
+          .insert({
+            user_id: user.id,
+            post_id: post.id,
+            type: 'like',
+          });
+      }
+
+      // The real-time subscription will update the state
     } catch (error) {
       console.error('Error liking post:', error);
       toast({
@@ -53,6 +101,10 @@ export function HistoricalPost({
         description: t('error.like_failed'),
         variant: 'destructive',
       });
+      // Revert optimistic update on error
+      const interactions = await fetchPostInteractions(post.id, user.id);
+      setLikeCount(interactions.likes);
+      setLiked(interactions.isLiked || false);
     } finally {
       setLoading(false);
     }

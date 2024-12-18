@@ -33,52 +33,45 @@ export function PostContent({ post: initialPost }: PostContentProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Function to load fresh post data
-  const loadFreshPost = async () => {
-    try {
-      const freshPost = await fetchPost(initialPost.id);
-      if (freshPost) {
-        setPost(freshPost);
-      }
-    } catch (error) {
-      console.error('Error loading post:', error);
-    }
-  };
-
-  // Get current post data from sessionStorage if available
+  // Load initial interactions
   useEffect(() => {
-    const storedData = sessionStorage.getItem('currentPostData');
-    if (storedData) {
-      const { post: currentPost, likes: currentLikes, isLiked: currentIsLiked } = JSON.parse(storedData);
-      setPost(currentPost);
-      setLikes(currentLikes);
-      setIsLiked(currentIsLiked);
-      // Clear the stored data after using it
-      sessionStorage.removeItem('currentPostData');
-    } else {
-      loadFreshPost();
-    }
-  }, [initialPost.id]);
+    const loadInteractions = async () => {
+      try {
+        const storedData = sessionStorage.getItem('currentPostData');
+        if (storedData) {
+          const { likes: storedLikes, isLiked: storedIsLiked } = JSON.parse(storedData);
+          setLikes(storedLikes);
+          setIsLiked(storedIsLiked);
+          sessionStorage.removeItem('currentPostData');
+        } else {
+          const interactions = await fetchPostInteractions(post.id, user?.id);
+          setLikes(interactions.likes);
+          setIsLiked(interactions.isLiked || false);
+        }
+      } catch (error) {
+        console.error('Error loading interactions:', error);
+      }
+    };
 
-  // Set up real-time subscription
+    loadInteractions();
+  }, [post.id, user?.id]);
+
+  // Subscribe to real-time updates
   useEffect(() => {
     const channel = supabase
-      .channel('post-updates')
+      .channel(`post-${post.id}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'historical_posts',
-          filter: `id=eq.${post.id}`,
+          table: 'user_interactions',
+          filter: `post_id=eq.${post.id}`,
         },
-        async (payload) => {
-          if (payload.new) {
-            const freshPost = await fetchPost(post.id);
-            if (freshPost) {
-              setPost(freshPost);
-            }
-          }
+        async () => {
+          const interactions = await fetchPostInteractions(post.id, user?.id);
+          setLikes(interactions.likes);
+          setIsLiked(interactions.isLiked || false);
         }
       )
       .subscribe();
@@ -86,41 +79,10 @@ export function PostContent({ post: initialPost }: PostContentProps) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [post.id]);
-
-  // Function to load interactions
-  const loadInteractions = async () => {
-    try {
-      const { likes } = await fetchPostInteractions(post.id);
-      setLikes(likes);
-
-      if (user) {
-        const { data } = await supabase
-          .from('user_interactions')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('post_id', post.id)
-          .eq('type', 'like')
-          .single();
-
-        setIsLiked(!!data);
-      }
-    } catch (error) {
-      console.error('Error loading interactions:', error);
-    }
-  };
-
-  // Only load interactions if we don't have them from sessionStorage
-  useEffect(() => {
-    const storedData = sessionStorage.getItem('currentPostData');
-    if (!storedData) {
-      loadInteractions();
-    }
-  }, [post.id, user]);
+  }, [post.id, user?.id]);
 
   const handleLike = async () => {
     if (!user || loading) return;
-
     setLoading(true);
 
     try {
@@ -141,8 +103,7 @@ export function PostContent({ post: initialPost }: PostContentProps) {
           });
       }
 
-      setIsLiked(!isLiked);
-      setLikes(prev => isLiked ? prev - 1 : prev + 1);
+      // The real-time subscription will update the state
     } catch (error) {
       console.error('Error:', error);
       toast({
@@ -150,6 +111,10 @@ export function PostContent({ post: initialPost }: PostContentProps) {
         description: t('error.like_failed'),
         variant: 'destructive',
       });
+      // Revert optimistic update on error
+      const interactions = await fetchPostInteractions(post.id, user?.id);
+      setLikes(interactions.likes);
+      setIsLiked(interactions.isLiked || false);
     } finally {
       setLoading(false);
     }

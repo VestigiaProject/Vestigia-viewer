@@ -7,13 +7,13 @@ import Markdown from 'markdown-to-jsx';
 import { useState } from 'react';
 
 type PostSourceProps = {
-  source?: string;
+  source?: string | null;
 };
 
 export function PostSource({ source }: PostSourceProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  if (!source) return null;
+  if (!source?.trim()) return null;
 
   return (
     <div className="mt-4">
@@ -37,11 +37,11 @@ export function PostSource({ source }: PostSourceProps) {
               options={{
                 overrides: {
                   a: {
-                    props: {
-                      className: 'text-blue-500 hover:underline',
-                      target: '_blank',
-                      rel: 'noopener noreferrer',
-                    },
+                    component: ({ children, ...props }) => (
+                      <a {...props} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                        {children}
+                      </a>
+                    ),
                   },
                 },
               }}

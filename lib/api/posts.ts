@@ -42,33 +42,54 @@ export async function fetchAllPostIds() {
 }
 
 export async function fetchPostInteractions(postId: string) {
-  const { data: likes, error: likesError } = await supabase
-    .from('user_interactions')
-    .select('user_id')
-    .eq('post_id', postId)
-    .eq('type', 'like');
+  try {
+    const [likesResponse, commentsResponse] = await Promise.all([
+      supabase
+        .from('user_interactions')
+        .select('id')
+        .eq('post_id', postId)
+        .eq('type', 'like'),
+      supabase
+        .from('user_interactions')
+        .select(`
+          id,
+          user_id,
+          post_id,
+          type,
+          content,
+          created_at,
+          user:user_profiles!user_interactions_user_id_fkey(
+            username,
+            avatar_url
+          )
+        `)
+        .eq('post_id', postId)
+        .eq('type', 'comment')
+        .order('created_at', { ascending: true })
+    ]);
 
-  const { data: comments, error: commentsError } = await supabase
-    .from('user_interactions')
-    .select(`
-      *,
-      user:user_profiles!user_interactions_user_id_fkey(
-        username,
-        avatar_url
-      )
-    `)
-    .eq('post_id', postId)
-    .eq('type', 'comment')
-    .order('created_at', { ascending: true });
+    if (likesResponse.error) throw likesResponse.error;
+    if (commentsResponse.error) throw commentsResponse.error;
 
-  if (likesError || commentsError) throw likesError || commentsError;
-  
-  return {
-    likes: likes?.length || 0,
-    comments: comments?.map(comment => ({
-      ...comment,
-      username: comment.user?.username,
-      avatar_url: comment.user?.avatar_url
-    })) || [],
-  };
+    return {
+      likes: likesResponse.data?.length || 0,
+      comments: (commentsResponse.data || []).map(comment => ({
+        ...comment,
+        username: comment.user?.username,
+        avatar_url: comment.user?.avatar_url
+      }))
+    };
+  } catch (error) {
+    console.error('Error fetching post interactions:', error);
+    return { likes: 0, comments: [] };
+  }
+}
+
+export async function updatePostSource(postId: string, source: string) {
+  const { error } = await supabase
+    .from('historical_posts')
+    .update({ source })
+    .eq('id', postId);
+
+  if (error) throw error;
 }

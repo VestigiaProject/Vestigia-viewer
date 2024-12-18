@@ -54,4 +54,111 @@ export function PostContent({ post: initialPost }: PostContentProps) {
     loadInteractions();
   }, [post.id, user]);
 
-  // ... rest of the component remains the same
+  const handleLike = async () => {
+    if (!user || loading) return;
+    setLoading(true);
+
+    try {
+      if (isLiked) {
+        await supabase
+          .from('user_interactions')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('post_id', post.id)
+          .eq('type', 'like');
+      } else {
+        await supabase
+          .from('user_interactions')
+          .insert({
+            user_id: user.id,
+            post_id: post.id,
+            type: 'like',
+          });
+      }
+
+      setIsLiked(!isLiked);
+      setLikes(prev => isLiked ? prev - 1 : prev + 1);
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to like post. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="mb-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.push('/timeline')}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Timeline
+        </Button>
+      </div>
+      <Card className="p-6 mb-8">
+        <div className="flex space-x-4">
+          <Link href={`/profile/${post.figure.id}`}>
+            <Avatar className="h-12 w-12">
+              <AvatarImage src={post.figure.profile_image} />
+              <AvatarFallback>{post.figure.name[0]}</AvatarFallback>
+            </Avatar>
+          </Link>
+          <div className="flex-1 space-y-4">
+            <div>
+              <Link
+                href={`/profile/${post.figure.id}`}
+                className="font-semibold hover:underline"
+              >
+                {post.figure.name}
+              </Link>
+              <p className="text-sm text-muted-foreground">
+                {post.figure.title}
+              </p>
+              <span className="text-sm text-muted-foreground">
+                {format(new Date(post.original_date), 'MMMM d, yyyy')}
+              </span>
+            </div>
+            <p className="text-lg whitespace-pre-wrap">{post.content}</p>
+            {post.media_url && (
+              <img
+                src={post.media_url}
+                alt="Post media"
+                className="rounded-lg max-h-96 object-cover"
+              />
+            )}
+            <div className="flex items-center space-x-4 pt-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`space-x-1 ${isLiked ? 'text-red-500' : ''}`}
+                onClick={handleLike}
+                disabled={loading}
+              >
+                <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
+                <span>{likes}</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="space-x-1"
+                onClick={() => document.getElementById('comments')?.scrollIntoView({ behavior: 'smooth' })}
+              >
+                <MessageCircle className="h-4 w-4" />
+                <span>Comments</span>
+              </Button>
+            </div>
+            <PostSource source={post.source} />
+          </div>
+        </div>
+      </Card>
+    </>
+  );
+}

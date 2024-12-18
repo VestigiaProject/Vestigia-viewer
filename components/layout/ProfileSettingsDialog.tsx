@@ -12,8 +12,16 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/hooks/useLanguage';
 import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 type ProfileSettingsDialogProps = {
   open: boolean;
@@ -26,6 +34,7 @@ export function ProfileSettingsDialog({
 }: ProfileSettingsDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { language, setLanguage } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [username, setUsername] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
@@ -144,6 +153,21 @@ export function ProfileSettingsDialog({
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Enter your username"
             />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="language">Language</Label>
+            <Select
+              value={language}
+              onValueChange={(value: 'fr' | 'en') => setLanguage(value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select language" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="fr">Français</SelectItem>
+                <SelectItem value="en">English</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <Button
             onClick={handleSubmit}

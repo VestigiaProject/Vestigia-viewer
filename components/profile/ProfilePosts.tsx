@@ -5,6 +5,7 @@ import { fetchFigurePosts } from '@/lib/api/figures';
 import { fetchPostInteractions } from '@/lib/api/posts';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/hooks/useLanguage';
 import { useEffect, useState } from 'react';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -18,6 +19,7 @@ export function ProfilePosts({
   currentDate: Date;
 }) {
   const { user } = useAuth();
+  const { language } = useLanguage();
   const [posts, setPosts] = useState<HistoricalPostWithFigure[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -27,11 +29,11 @@ export function ProfilePosts({
   useEffect(() => {
     loadPosts();
     loadUserLikes();
-  }, [figureId]);
+  }, [figureId, language]);
 
   async function loadPosts() {
     try {
-      const newPosts = await fetchFigurePosts(figureId, currentDate, page);
+      const newPosts = await fetchFigurePosts(figureId, currentDate, page, 10, language);
       setPosts((prev) => [...prev, ...newPosts]);
       setHasMore(newPosts.length === 10);
 

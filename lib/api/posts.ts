@@ -1,7 +1,7 @@
 import { supabase } from '../supabase';
 import type { HistoricalPostWithFigure } from '../supabase';
 
-export async function fetchPosts(currentDate: Date, page: number = 1, limit: number = 10) {
+export async function fetchPosts(currentDate: Date, page: number = 1, limit: number = 10, language: 'fr' | 'en' = 'fr') {
   const start = (page - 1) * limit;
   
   const { data, error } = await supabase
@@ -11,8 +11,10 @@ export async function fetchPosts(currentDate: Date, page: number = 1, limit: num
       figure_id,
       original_date,
       content,
+      content_en,
       media_url,
       source,
+      source_en,
       is_significant,
       figure:historical_figures!inner(
         id,
@@ -27,10 +29,18 @@ export async function fetchPosts(currentDate: Date, page: number = 1, limit: num
     .range(start, start + limit - 1);
 
   if (error) throw error;
-  return data as unknown as HistoricalPostWithFigure[];
+
+  // Transform the data to use the correct language content
+  const transformedData = data.map(post => ({
+    ...post,
+    content: language === 'en' && post.content_en ? post.content_en : post.content,
+    source: language === 'en' && post.source_en ? post.source_en : post.source,
+  }));
+
+  return transformedData as unknown as HistoricalPostWithFigure[];
 }
 
-export async function fetchPost(id: string) {
+export async function fetchPost(id: string, language: 'fr' | 'en' = 'fr') {
   const { data, error } = await supabase
     .from('historical_posts')
     .select(`
@@ -38,8 +48,10 @@ export async function fetchPost(id: string) {
       figure_id,
       original_date,
       content,
+      content_en,
       media_url,
       source,
+      source_en,
       is_significant,
       figure:historical_figures!inner(
         id,
@@ -53,7 +65,15 @@ export async function fetchPost(id: string) {
     .single();
 
   if (error) throw error;
-  return data as unknown as HistoricalPostWithFigure;
+
+  // Transform the data to use the correct language content
+  const transformedData = {
+    ...data,
+    content: language === 'en' && data.content_en ? data.content_en : data.content,
+    source: language === 'en' && data.source_en ? data.source_en : data.source,
+  };
+
+  return transformedData as unknown as HistoricalPostWithFigure;
 }
 
 export async function fetchAllPostIds() {

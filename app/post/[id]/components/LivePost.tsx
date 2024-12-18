@@ -17,24 +17,29 @@ export function LivePost({ initialPost }: LivePostProps) {
   // Function to fetch the latest post data
   const loadPost = async () => {
     try {
-      const updatedPost = await fetchPost(post.id);
+      const updatedPost = await fetchPost(initialPost.id);
       setPost(updatedPost);
     } catch (error) {
       console.error('Error loading post:', error);
     }
   };
 
+  // Load fresh data on mount
+  useEffect(() => {
+    loadPost();
+  }, []);
+
   // Subscribe to real-time updates
   useEffect(() => {
     const channel = supabase
-      .channel(`post-${post.id}`)
+      .channel(`post-${initialPost.id}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'historical_posts',
-          filter: `id=eq.${post.id}`,
+          filter: `id=eq.${initialPost.id}`,
         },
         async () => {
           // Reload the post data when changes occur
@@ -43,14 +48,14 @@ export function LivePost({ initialPost }: LivePostProps) {
       )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          console.log(`Subscribed to updates for post ${post.id}`);
+          console.log(`Subscribed to updates for post ${initialPost.id}`);
         }
       });
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [post.id]);
+  }, [initialPost.id]);
 
   return (
     <>

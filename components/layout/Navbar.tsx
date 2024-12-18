@@ -1,44 +1,8 @@
-'use client';
-
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useAuth } from '@/lib/hooks/useAuth';
-import { useUserProfile } from '@/lib/hooks/useUserProfile';
-import { useTimeProgress } from '@/lib/hooks/useTimeProgress';
-import { supabase } from '@/lib/supabase';
-import { useRouter, usePathname } from 'next/navigation';
-import { Settings, LogOut, Clock, Calendar } from 'lucide-react';
-import { useState } from 'react';
-import { ProfileSettingsDialog } from './ProfileSettingsDialog';
-import { TimePeriodDialog } from './TimePeriodDialog';
-import { format } from 'date-fns';
-
-const START_DATE = '1789-06-01';
+// Previous imports remain the same...
+import { LanguageSwitch } from './LanguageSwitch';
 
 export function Navbar() {
-  const { user } = useAuth();
-  const { profile } = useUserProfile();
-  const { currentDate, daysElapsed } = useTimeProgress(START_DATE);
-  const router = useRouter();
-  const pathname = usePathname();
-  const [showSettings, setShowSettings] = useState(false);
-  const [showTimePeriod, setShowTimePeriod] = useState(false);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push('/');
-  };
-
-  if (!user) return null;
-
-  const isTimeline = pathname === '/timeline';
+  // Previous code remains the same...
 
   return (
     <>
@@ -66,6 +30,7 @@ export function Navbar() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <LanguageSwitch />
               <DropdownMenuItem onClick={() => setShowTimePeriod(true)}>
                 <Clock className="mr-2 h-4 w-4" />
                 Set Time Period

@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-import type { LocalizedContent } from './types/language';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -19,15 +18,30 @@ export type HistoricalPost = {
   figure_id: string;
   original_date: string;
   content: string;
-  content_en: string | null;
   media_url?: string;
-  source?: string | null;
-  source_en?: string | null;
+  source?: string;
   is_significant: boolean;
-} & LocalizedContent;
+};
 
 export type HistoricalPostWithFigure = HistoricalPost & {
   figure: HistoricalFigure;
 };
 
-// ... rest of the types remain the same
+export type UserProfile = {
+  id: string;
+  username: string;
+  avatar_url?: string;
+  start_date: string;
+  created_at: string;
+};
+
+export type UserInteraction = {
+  id: string;
+  user_id: string;
+  post_id: string;
+  type: 'comment' | 'like';
+  content?: string;
+  created_at: string;
+  username?: string;
+  avatar_url?: string;
+};

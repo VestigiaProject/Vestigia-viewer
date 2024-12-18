@@ -20,7 +20,9 @@ export async function fetchPosts(currentDate: Date, page: number = 1, limit: num
         id,
         name,
         title,
+        title_en,
         biography,
+        biography_en,
         profile_image
       )
     `)
@@ -49,7 +51,9 @@ export async function fetchPost(id: string) {
         id,
         name,
         title,
+        title_en,
         biography,
+        biography_en,
         profile_image
       )
     `)

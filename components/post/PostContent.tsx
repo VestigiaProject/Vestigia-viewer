@@ -35,7 +35,7 @@ export function PostContent({ post: initialPost }: PostContentProps) {
 
   // Load initial interactions
   useEffect(() => {
-    const loadInteractions = async () => {
+    const loadInitialInteractions = async () => {
       try {
         const storedData = sessionStorage.getItem('currentPostData');
         if (storedData) {
@@ -49,11 +49,11 @@ export function PostContent({ post: initialPost }: PostContentProps) {
           setIsLiked(interactions.isLiked || false);
         }
       } catch (error) {
-        console.error('Error loading interactions:', error);
+        console.error('Error loading initial interactions:', error);
       }
     };
 
-    loadInteractions();
+    loadInitialInteractions();
   }, [post.id, user?.id]);
 
   // Subscribe to real-time updates
@@ -69,9 +69,13 @@ export function PostContent({ post: initialPost }: PostContentProps) {
           filter: `post_id=eq.${post.id}`,
         },
         async () => {
-          const interactions = await fetchPostInteractions(post.id, user?.id);
-          setLikes(interactions.likes);
-          setIsLiked(interactions.isLiked || false);
+          try {
+            const interactions = await fetchPostInteractions(post.id, user?.id);
+            setLikes(interactions.likes);
+            setIsLiked(interactions.isLiked || false);
+          } catch (error) {
+            console.error('Error updating interactions:', error);
+          }
         }
       )
       .subscribe();
@@ -103,7 +107,9 @@ export function PostContent({ post: initialPost }: PostContentProps) {
           });
       }
 
-      // The real-time subscription will update the state
+      // Optimistic update
+      setIsLiked(!isLiked);
+      setLikes(prev => isLiked ? prev - 1 : prev + 1);
     } catch (error) {
       console.error('Error:', error);
       toast({

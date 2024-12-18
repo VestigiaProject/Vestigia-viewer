@@ -107,9 +107,9 @@ interface PostInteractions {
 
 export async function fetchPostInteractions(postId: string, userId?: string): Promise<PostInteractions> {
   // Get likes count
-  const { count: likesCount, error: likesError } = await supabase
+  const { data: likes, error: likesError } = await supabase
     .from('user_interactions')
-    .select('*', { count: 'exact', head: true })
+    .select('id')
     .eq('post_id', postId)
     .eq('type', 'like');
 
@@ -139,7 +139,7 @@ export async function fetchPostInteractions(postId: string, userId?: string): Pr
       type,
       content,
       created_at,
-      user:user_profiles!user_interactions_user_id_fkey(
+      user:user_profiles!inner(
         username,
         avatar_url
       )
@@ -157,12 +157,12 @@ export async function fetchPostInteractions(postId: string, userId?: string): Pr
     type: 'comment' as const,
     content: comment.content || '',
     created_at: comment.created_at,
-    username: comment.user[0].username,
-    avatar_url: comment.user[0].avatar_url || undefined
+    username: comment.user?.[0]?.username || 'Deleted User',
+    avatar_url: comment.user?.[0]?.avatar_url || undefined
   }));
 
   return {
-    likes: likesCount || 0,
+    likes: likes?.length || 0,
     comments: mappedComments,
     isLiked
   };

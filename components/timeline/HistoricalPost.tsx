@@ -44,6 +44,22 @@ export function HistoricalPost({
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
+  // Load initial interactions
+  useEffect(() => {
+    const loadInitialInteractions = async () => {
+      try {
+        const interactions = await fetchPostInteractions(post.id, user?.id);
+        setLikeCount(interactions.likes);
+        setLiked(interactions.isLiked || false);
+        setComments(interactions.comments);
+      } catch (error) {
+        console.error('Error loading initial interactions:', error);
+      }
+    };
+
+    loadInitialInteractions();
+  }, [post.id, user?.id]);
+
   // Subscribe to real-time updates
   useEffect(() => {
     const channel = supabase
@@ -57,11 +73,14 @@ export function HistoricalPost({
           filter: `post_id=eq.${post.id}`,
         },
         async () => {
-          // Refresh interactions when changes occur
-          const interactions = await fetchPostInteractions(post.id, user?.id);
-          setLikeCount(interactions.likes);
-          setLiked(interactions.isLiked || false);
-          setComments(interactions.comments);
+          try {
+            const interactions = await fetchPostInteractions(post.id, user?.id);
+            setLikeCount(interactions.likes);
+            setLiked(interactions.isLiked || false);
+            setComments(interactions.comments);
+          } catch (error) {
+            console.error('Error updating interactions:', error);
+          }
         }
       )
       .subscribe();
@@ -93,7 +112,9 @@ export function HistoricalPost({
           });
       }
 
-      // The real-time subscription will update the state
+      // Optimistic update
+      setLiked(!liked);
+      setLikeCount(prev => liked ? prev - 1 : prev + 1);
     } catch (error) {
       console.error('Error liking post:', error);
       toast({

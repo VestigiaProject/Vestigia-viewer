@@ -44,10 +44,10 @@ export default function Home() {
       <div className="container mx-auto px-4 py-16">
         <div className="flex flex-col items-center justify-center space-y-8 text-center">
           <ScrollText className="h-20 w-20 text-blue-400" />
-          <h1 className="text-4xl md:text-6xl font-bold">Historical Social</h1>
+          <h1 className="text-4xl md:text-6xl font-bold">Scroll History</h1>
           <p className="text-xl md:text-2xl text-gray-300 max-w-2xl">
             Experience history as it happened, through the lens of social media.
-            Start your journey from June 1st, 1789.
+            Start your journey with the French Revolution.
           </p>
           <div className="space-y-4">
             <Button

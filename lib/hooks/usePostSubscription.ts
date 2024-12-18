@@ -11,25 +11,48 @@ export function usePostSubscription(initialPost: HistoricalPostWithFigure) {
     // Set initial post
     setPost(initialPost);
 
+    // Function to fetch complete post data
+    const fetchCompletePost = async () => {
+      const { data, error } = await supabase
+        .from('historical_posts')
+        .select(`
+          id,
+          figure_id,
+          original_date,
+          content,
+          media_url,
+          source,
+          is_significant,
+          figure:historical_figures!inner(
+            id,
+            name,
+            title,
+            biography,
+            profile_image
+          )
+        `)
+        .eq('id', initialPost.id)
+        .single();
+
+      if (!error && data) {
+        setPost(data as unknown as HistoricalPostWithFigure);
+      }
+    };
+
     // Enable realtime for the historical_posts table
     const channel = supabase
       .channel('historical_posts_changes')
       .on(
         'postgres_changes',
         {
-          event: 'UPDATE',
+          event: '*', // Listen to all changes
           schema: 'public',
           table: 'historical_posts',
           filter: `id=eq.${initialPost.id}`,
         },
-        (payload) => {
-          // Merge the new data with existing post data
-          if (payload.new) {
-            setPost(prev => ({
-              ...prev,
-              ...payload.new,
-            }));
-          }
+        async () => {
+          // Fetch complete post data when any change occurs
+          await fetchCompletePost();
         }
       )
       .subscribe();
@@ -37,7 +60,7 @@ export function usePostSubscription(initialPost: HistoricalPostWithFigure) {
     return () => {
       channel.unsubscribe();
     };
-  }, [initialPost]);
+  }, [initialPost.id]);
 
   return post;
 }

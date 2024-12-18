@@ -16,19 +16,21 @@ export default async function PostPage({ params }: { params: { id: string } }) {
 
   if (!initialPost) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <p className="text-muted-foreground">Post not found</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       <main className="container max-w-2xl mx-auto py-4">
-        <Suspense fallback={<PostSkeleton />}>
-          <PostContent post={initialPost} />
-          <PostComments postId={initialPost.id} />
-        </Suspense>
+        <div className="bg-white/95 shadow-sm rounded-lg">
+          <Suspense fallback={<PostSkeleton />}>
+            <PostContent post={initialPost} />
+            <PostComments postId={initialPost.id} />
+          </Suspense>
+        </div>
       </main>
     </div>
   );

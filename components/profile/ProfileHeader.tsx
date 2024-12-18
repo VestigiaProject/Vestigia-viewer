@@ -21,8 +21,8 @@ export function ProfileHeader({ figure, postCount }: ProfileHeaderProps) {
   const biography = language === 'en' && figure.biography_en ? figure.biography_en : figure.biography;
 
   return (
-    <div className="bg-white/95 shadow-sm">
-      <Card className="rounded-none border-x-0">
+    <div>
+      <Card>
         <div className="p-6">
           <div className="flex flex-col gap-6">
             <div className="flex justify-between items-start">

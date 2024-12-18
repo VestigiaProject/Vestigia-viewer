@@ -55,8 +55,8 @@ export function ProfileContent({ id }: { id: string }) {
 
   return (
     <div className="min-h-screen">
-      <div className="container max-w-2xl mx-auto py-4 bg-white/95 shadow-sm rounded-lg my-4">
-        <div className="mb-4">
+      <div className="container max-w-2xl mx-auto">
+        <div className="bg-white/95 shadow-sm rounded-lg my-4 p-4">
           <Button
             variant="ghost"
             size="sm"
@@ -67,12 +67,12 @@ export function ProfileContent({ id }: { id: string }) {
             {t('app.back_to_timeline')}
           </Button>
         </div>
-      </div>
-      <div className="bg-white/95 shadow-sm">
-        <ProfileHeader figure={figure} postCount={postCount} />
-      </div>
-      <div className="bg-transparent">
-        <ProfilePosts figureId={id} currentDate={currentDate} />
+        <div className="bg-white/95 shadow-sm rounded-lg">
+          <ProfileHeader figure={figure} postCount={postCount} />
+        </div>
+        <div className="mt-4">
+          <ProfilePosts figureId={id} currentDate={currentDate} />
+        </div>
       </div>
     </div>
   );

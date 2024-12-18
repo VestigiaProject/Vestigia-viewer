@@ -8,52 +8,36 @@ export function usePostSubscription(initialPost: HistoricalPostWithFigure) {
   const [post, setPost] = useState(initialPost);
 
   useEffect(() => {
+    // Set initial post
+    setPost(initialPost);
+
+    // Enable realtime for the historical_posts table
     const channel = supabase
-      .channel('post_changes')
+      .channel('historical_posts_changes')
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'UPDATE',
           schema: 'public',
           table: 'historical_posts',
           filter: `id=eq.${initialPost.id}`,
         },
-        async (payload) => {
+        (payload) => {
+          // Merge the new data with existing post data
           if (payload.new) {
-            // Fetch the complete post data with figure information
-            const { data } = await supabase
-              .from('historical_posts')
-              .select(`
-                id,
-                figure_id,
-                original_date,
-                content,
-                media_url,
-                source,
-                is_significant,
-                figure:historical_figures!inner(
-                  id,
-                  name,
-                  title,
-                  biography,
-                  profile_image
-                )
-              `)
-              .eq('id', initialPost.id)
-              .single();
-
-            if (data) {
-              setPost(data as unknown as HistoricalPostWithFigure);
-            }
+            setPost(prev => ({
+              ...prev,
+              ...payload.new,
+            }));
           }
         }
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      channel.unsubscribe();
     };
-  }, [initialPost.id]);
+  }, [initialPost]);
 
   return post;
 }

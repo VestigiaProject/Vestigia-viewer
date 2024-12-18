@@ -54,7 +54,13 @@ export function Navbar() {
       <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 items-center">
           <div className="flex-1 flex items-center">
-            <div className="font-semibold">{t('app.title')}</div>
+            <Button
+              variant="ghost"
+              className="font-semibold hover:text-foreground"
+              onClick={() => router.push('/timeline')}
+            >
+              {t('app.title')}
+            </Button>
             {isTimeline && (
               <div className="ml-4 flex items-center space-x-2 text-sm text-muted-foreground">
                 <Calendar className="h-4 w-4" />

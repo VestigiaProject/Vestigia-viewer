@@ -23,11 +23,10 @@ export function ProfileHeader({ figure, postCount }: ProfileHeaderProps) {
   return (
     <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <Card className="rounded-none border-x-0">
-        <div className="h-32 bg-gradient-to-r from-blue-500 to-purple-500" />
         <div className="p-4">
           <div className="flex flex-col gap-4">
             <div className="flex justify-between items-start">
-              <Avatar className="h-24 w-24 -mt-12 border-4 border-background">
+              <Avatar className="h-24 w-24 border-4 border-background">
                 <AvatarImage src={figure.profile_image} />
                 <AvatarFallback>{figure.name[0]}</AvatarFallback>
               </Avatar>
@@ -56,10 +55,9 @@ export function ProfileHeaderSkeleton() {
   return (
     <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <Card className="rounded-none border-x-0">
-        <div className="h-32 bg-gradient-to-r from-blue-500/20 to-purple-500/20" />
         <div className="p-4">
           <div className="flex flex-col gap-4">
-            <Skeleton className="h-24 w-24 rounded-full -mt-12" />
+            <Skeleton className="h-24 w-24 rounded-full" />
             <div>
               <Skeleton className="h-8 w-48" />
               <Skeleton className="h-4 w-32 mt-2" />

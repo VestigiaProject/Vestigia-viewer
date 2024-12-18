@@ -3,7 +3,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
 import { format } from 'date-fns';
-import { Heart, MessageCircle, ArrowLeft } from 'lucide-react';
+import { Heart, MessageCircle, ArrowLeft, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -175,12 +175,17 @@ export function PostContent({ post: initialPost }: PostContentProps) {
           </Link>
           <div className="flex-1 space-y-4">
             <div>
-              <Link
-                href={`/profile/${post.figure.id}`}
-                className="font-semibold hover:underline"
-              >
-                {post.figure.name}
-              </Link>
+              <div className="flex items-center gap-1">
+                <Link
+                  href={`/profile/${post.figure.id}`}
+                  className="font-semibold hover:underline"
+                >
+                  {post.figure.name}
+                </Link>
+                {post.figure.checkmark && (
+                  <Check className="h-4 w-4 text-blue-500" />
+                )}
+              </div>
               <p className="text-sm text-muted-foreground">
                 {title}
               </p>

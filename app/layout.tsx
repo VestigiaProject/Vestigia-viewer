@@ -25,14 +25,25 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={cn('antialiased', fontSans.variable)}>
-      <body className={cn('min-h-screen bg-background font-sans antialiased')}>
-        <LanguageProvider>
-          <TranslationProvider>
-            <Toaster />
-            <Navbar />
-            {children}
-          </TranslationProvider>
-        </LanguageProvider>
+      <body className={cn('min-h-screen font-sans antialiased relative')}>
+        {/* Background image with overlay */}
+        <div 
+          className="fixed inset-0 bg-cover bg-center bg-no-repeat -z-10"
+          style={{
+            backgroundImage: 'url("https://ocubfcrajgjmdzymcwbu.supabase.co/storage/v1/object/public/landingpage/landing4.png")',
+          }}
+        >
+          <div className="absolute inset-0 bg-black/40" />
+        </div>
+        <div className="relative min-h-screen bg-white/80 backdrop-blur-sm">
+          <LanguageProvider>
+            <TranslationProvider>
+              <Toaster />
+              <Navbar />
+              {children}
+            </TranslationProvider>
+          </LanguageProvider>
+        </div>
       </body>
     </html>
   );

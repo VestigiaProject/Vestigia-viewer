@@ -123,7 +123,9 @@ export default function TimelinePage() {
       {loading ? (
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
-            <Skeleton key={i} className="h-48 w-full" />
+            <div key={i} className="bg-white/95 rounded-lg shadow-sm">
+              <Skeleton className="h-48 w-full" />
+            </div>
           ))}
         </div>
       ) : (
@@ -134,24 +136,25 @@ export default function TimelinePage() {
             loadPosts();
           }}
           hasMore={hasMore}
-          loader={<Skeleton className="h-48 w-full my-4" />}
+          loader={<div className="bg-white/95 rounded-lg shadow-sm my-4"><Skeleton className="h-48 w-full" /></div>}
           endMessage={
-            <p className="text-center text-muted-foreground py-4">
+            <p className="text-center text-muted-foreground py-4 bg-white/95 rounded-lg shadow-sm">
               No more historical posts to load
             </p>
           }
         >
           <div className="space-y-4">
             {posts.map((post) => (
-              <HistoricalPost
-                key={post.id}
-                post={post}
-                onLike={handleLike}
-                onComment={handleComment}
-                likes={postInteractions[post.id]?.likes || 0}
-                isLiked={userLikes.has(post.id)}
-                comments={postInteractions[post.id]?.comments || []}
-              />
+              <div key={post.id} className="bg-white/95 rounded-lg shadow-sm">
+                <HistoricalPost
+                  post={post}
+                  onLike={handleLike}
+                  onComment={handleComment}
+                  likes={postInteractions[post.id]?.likes || 0}
+                  isLiked={userLikes.has(post.id)}
+                  comments={postInteractions[post.id]?.comments || []}
+                />
+              </div>
             ))}
           </div>
         </InfiniteScroll>

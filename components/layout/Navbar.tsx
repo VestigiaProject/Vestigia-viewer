@@ -51,7 +51,7 @@ export function Navbar() {
 
   return (
     <>
-      <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <nav className="border-b bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/80 sticky top-0 z-50">
         <div className="container flex h-14 items-center">
           <div className="flex-1 flex items-center">
             <Button

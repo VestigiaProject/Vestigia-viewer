@@ -159,11 +159,11 @@ export function PostComments({ postId }: PostCommentsProps) {
 
   return (
     <div id="comments" className="border-t">
-      <div className="p-6 space-y-6">
+      <div className="p-4 md:p-6 space-y-6">
         <h2 className="text-xl font-semibold">{t('comments.title')}</h2>
         
-        <div className="space-y-4">
-          <div className="flex gap-4">
+        <div className="space-y-6">
+          <div className="flex flex-col md:flex-row gap-4">
             <Avatar className="h-10 w-10">
               <AvatarImage src={userProfile?.avatar_url || undefined} />
               <AvatarFallback>
@@ -202,13 +202,13 @@ export function PostComments({ postId }: PostCommentsProps) {
             </p>
           ) : (
             comments.map((comment) => (
-              <div key={comment.id} className="flex space-x-4">
+              <div key={comment.id} className="flex flex-col md:flex-row gap-4">
                 <Avatar className="h-10 w-10">
                   <AvatarImage src={comment.avatar_url || undefined} />
                   <AvatarFallback>{comment.username?.[0].toUpperCase() || 'U'}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center space-x-2">
                       <span className="font-medium">{comment.username}</span>
                       <span className="text-sm text-muted-foreground">
@@ -221,7 +221,7 @@ export function PostComments({ postId }: PostCommentsProps) {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-muted-foreground hover:text-destructive"
+                            className="text-muted-foreground hover:text-destructive -mr-2"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>

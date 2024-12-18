@@ -40,7 +40,9 @@ export default function RootLayout({
             <TranslationProvider>
               <Toaster />
               <Navbar />
-              {children}
+              <div className="px-4 md:px-0">
+                {children}
+              </div>
             </TranslationProvider>
           </LanguageProvider>
         </div>

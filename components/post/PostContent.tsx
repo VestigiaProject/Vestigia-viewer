@@ -153,28 +153,28 @@ export function PostContent({ post: initialPost }: PostContentProps) {
   const title = language === 'en' && post.figure.title_en ? post.figure.title_en : post.figure.title;
 
   return (
-    <div className="p-6">
-      <div className="mb-4">
+    <div className="p-4 md:p-6">
+      <div className="mb-6">
         <Button
           variant="ghost"
           size="sm"
           onClick={() => router.push('/timeline')}
-          className="text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground -ml-2"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           {t('app.back_to_timeline')}
         </Button>
       </div>
-      <div className="flex space-x-4">
-        <Link href={`/profile/${post.figure.id}`}>
+      <div className="flex flex-col md:flex-row md:space-x-4">
+        <Link href={`/profile/${post.figure.id}`} className="mb-4 md:mb-0">
           <Avatar className="h-12 w-12">
             <AvatarImage src={post.figure.profile_image} />
             <AvatarFallback>{post.figure.name[0]}</AvatarFallback>
           </Avatar>
         </Link>
         <div className="flex-1 space-y-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-1">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
               <Link
                 href={`/profile/${post.figure.id}`}
                 className="font-semibold hover:underline"
@@ -188,17 +188,19 @@ export function PostContent({ post: initialPost }: PostContentProps) {
             <p className="text-sm text-muted-foreground">
               {title}
             </p>
-            <span className="text-sm text-muted-foreground">
+            <span className="text-sm text-muted-foreground block">
               {format(new Date(post.original_date), language === 'fr' ? 'd MMMM yyyy' : 'MMMM d, yyyy', { locale: language === 'fr' ? fr : undefined })}
             </span>
           </div>
           <p className="text-base whitespace-pre-wrap leading-relaxed">{content}</p>
           {post.media_url && (
-            <img
-              src={post.media_url}
-              alt="Post media"
-              className="rounded-lg max-h-96 object-cover"
-            />
+            <div className="rounded-lg overflow-hidden">
+              <img
+                src={post.media_url}
+                alt="Post media"
+                className="w-full max-h-96 object-cover"
+              />
+            </div>
           )}
           <div className="flex items-center space-x-4 pt-4 border-t">
             <Button

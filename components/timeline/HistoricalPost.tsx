@@ -180,8 +180,8 @@ export function HistoricalPost({
             </Avatar>
           </Link>
           <div className="flex-1 space-y-2">
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
                 <div className="flex items-center gap-1">
                   <Link
                     href={`/profile/${post.figure.id}`}
@@ -198,7 +198,7 @@ export function HistoricalPost({
                   {title}
                 </p>
               </div>
-              <span className="text-sm text-muted-foreground">
+              <span className="text-sm text-muted-foreground shrink-0 ml-4">
                 {format(new Date(post.original_date), language === 'fr' ? 'd MMM yyyy' : 'MMM d, yyyy', { locale: language === 'fr' ? fr : undefined })}
               </span>
             </div>

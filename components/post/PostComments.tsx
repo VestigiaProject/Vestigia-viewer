@@ -22,6 +22,7 @@ import { useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import type { UserInteraction } from '@/lib/supabase';
 import { useTranslation } from '@/lib/hooks/useTranslation';
+import { fr } from 'date-fns/locale';
 
 type PostCommentsProps = {
   postId: string;
@@ -208,7 +209,7 @@ export function PostComments({ postId }: PostCommentsProps) {
                   <div className="flex items-center space-x-2">
                     <span className="font-medium">{comment.username}</span>
                     <span className="text-sm text-muted-foreground">
-                      {format(new Date(comment.created_at), 'MMM d, yyyy')}
+                      {format(new Date(comment.created_at), 'MMM d, yyyy', { locale: language === 'fr' ? fr : undefined })}
                     </span>
                   </div>
                   {user?.id === comment.user_id && (

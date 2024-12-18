@@ -16,6 +16,7 @@ import type { HistoricalPostWithFigure } from '@/lib/supabase';
 import { fetchPost, fetchPostInteractions } from '@/lib/api/posts';
 import { PostSource } from './PostSource';
 import { useTranslation } from '@/lib/hooks/useTranslation';
+import { fr } from 'date-fns/locale';
 
 type PostContentProps = {
   post: HistoricalPostWithFigure;
@@ -191,7 +192,7 @@ export function PostContent({ post: initialPost }: PostContentProps) {
                 {title}
               </p>
               <span className="text-sm text-muted-foreground">
-                {format(new Date(post.original_date), 'MMMM d, yyyy')}
+                {format(new Date(post.original_date), 'MMMM d, yyyy', { locale: language === 'fr' ? fr : undefined })}
               </span>
             </div>
             <p className="text-lg whitespace-pre-wrap">{content}</p>

@@ -12,6 +12,7 @@ import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useLanguage } from '@/lib/hooks/useLanguage';
 import { useTranslation } from '@/lib/hooks/useTranslation';
+import { fr } from 'date-fns/locale';
 
 type PostProps = {
   post: HistoricalPostWithFigure;
@@ -97,7 +98,7 @@ export function HistoricalPost({
                 </p>
               </div>
               <span className="text-sm text-muted-foreground">
-                {format(new Date(post.original_date), 'MMM d, yyyy')}
+                {format(new Date(post.original_date), 'MMM d, yyyy', { locale: language === 'fr' ? fr : undefined })}
               </span>
             </div>
             <p className="text-sm whitespace-pre-wrap">{content}</p>

@@ -1,37 +1,20 @@
-'use client';
-
 import { Suspense } from 'react';
 import { PostContent } from '@/components/post/PostContent';
 import { PostComments } from '@/components/post/PostComments';
 import { PostSkeleton } from '@/components/post/PostSkeleton';
-import { fetchPost } from '@/lib/api/posts';
-import { useEffect, useState } from 'react';
-import type { HistoricalPostWithFigure } from '@/lib/supabase';
+import { fetchPost, fetchAllPostIds } from '@/lib/api/posts';
 
-export default function PostPage({ params }: { params: { id: string } }) {
-  const [post, setPost] = useState<HistoricalPostWithFigure | null>(null);
-  const [loading, setLoading] = useState(true);
+// Keep generateStaticParams for static export
+export async function generateStaticParams() {
+  const ids = await fetchAllPostIds();
+  return ids.map((id) => ({ id }));
+}
 
-  useEffect(() => {
-    async function loadPost() {
-      try {
-        const data = await fetchPost(params.id);
-        setPost(data);
-      } catch (error) {
-        console.error('Error loading post:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
+export default async function PostPage({ params }: { params: { id: string } }) {
+  // Get initial post data at build time
+  const initialPost = await fetchPost(params.id);
 
-    loadPost();
-  }, [params.id]);
-
-  if (loading) {
-    return <PostSkeleton />;
-  }
-
-  if (!post) {
+  if (!initialPost) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <p className="text-muted-foreground">Post not found</p>
@@ -43,8 +26,8 @@ export default function PostPage({ params }: { params: { id: string } }) {
     <div className="min-h-screen bg-background">
       <main className="container max-w-2xl mx-auto py-4">
         <Suspense fallback={<PostSkeleton />}>
-          <PostContent post={post} />
-          <PostComments postId={post.id} />
+          <PostContent post={initialPost} />
+          <PostComments postId={initialPost.id} />
         </Suspense>
       </main>
     </div>

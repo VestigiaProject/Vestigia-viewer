@@ -35,27 +35,13 @@ export type UserProfile = {
   created_at: string;
 };
 
-export type BaseInteraction = {
+export type UserInteraction = {
   id: string;
   user_id: string;
   post_id: string;
+  type: 'comment' | 'like';
+  content?: string;
   created_at: string;
-};
-
-export type CommentInteraction = BaseInteraction & {
-  type: 'comment';
-  content: string;
   username?: string;
   avatar_url?: string;
-};
-
-export type LikeInteraction = BaseInteraction & {
-  type: 'like';
-};
-
-export type UserInteraction = CommentInteraction | LikeInteraction;
-
-export type PostInteractions = {
-  likes: number;
-  comments: CommentInteraction[];
 };

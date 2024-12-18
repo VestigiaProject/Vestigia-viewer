@@ -1,9 +1,5 @@
 import { supabase } from '../supabase';
-import type { 
-  HistoricalPostWithFigure, 
-  CommentInteraction,
-  PostInteractions 
-} from '../supabase';
+import type { HistoricalPostWithFigure } from '../supabase';
 
 export async function fetchPosts(currentDate: Date, page: number = 1, limit: number = 10) {
   const start = (page - 1) * limit;
@@ -45,62 +41,34 @@ export async function fetchAllPostIds() {
   return data.map(post => post.id);
 }
 
-export async function fetchPostInteractions(postId: string): Promise<PostInteractions> {
-  try {
-    const [likesResponse, commentsResponse] = await Promise.all([
-      supabase
-        .from('user_interactions')
-        .select('id')
-        .eq('post_id', postId)
-        .eq('type', 'like'),
-      supabase
-        .from('user_interactions')
-        .select(`
-          id,
-          user_id,
-          post_id,
-          type,
-          content,
-          created_at,
-          user:user_profiles!user_interactions_user_id_fkey(
-            username,
-            avatar_url
-          )
-        `)
-        .eq('post_id', postId)
-        .eq('type', 'comment')
-        .order('created_at', { ascending: true })
-    ]);
+export async function fetchPostInteractions(postId: string) {
+  const { data: likes, error: likesError } = await supabase
+    .from('user_interactions')
+    .select('user_id')
+    .eq('post_id', postId)
+    .eq('type', 'like');
 
-    if (likesResponse.error) throw likesResponse.error;
-    if (commentsResponse.error) throw commentsResponse.error;
+  const { data: comments, error: commentsError } = await supabase
+    .from('user_interactions')
+    .select(`
+      *,
+      user:user_profiles!user_interactions_user_id_fkey(
+        username,
+        avatar_url
+      )
+    `)
+    .eq('post_id', postId)
+    .eq('type', 'comment')
+    .order('created_at', { ascending: true });
 
-    const comments = commentsResponse.data.map(comment => ({
-      id: comment.id,
-      user_id: comment.user_id,
-      post_id: comment.post_id,
-      type: 'comment' as const,
-      content: comment.content,
-      created_at: comment.created_at,
+  if (likesError || commentsError) throw likesError || commentsError;
+  
+  return {
+    likes: likes?.length || 0,
+    comments: comments?.map(comment => ({
+      ...comment,
       username: comment.user?.username,
       avatar_url: comment.user?.avatar_url
-    }));
-
-    return {
-      likes: likesResponse.data?.length || 0,
-      comments
-    };
-  } catch (error) {
-    console.error('Error fetching post interactions:', error);
-    return { likes: 0, comments: [] };
-  }
-}
-
-export async function updatePostSource(postId: string, source: string) {
-  const { error } = await supabase
-    .from('historical_posts')
-    .update({ source })
-    .eq('id', postId);
-
-  if (error) throw error;
+    })) || [],
+  };
 }

@@ -13,6 +13,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { HistoricalPostWithFigure } from '@/lib/supabase';
 import { fetchPostInteractions } from '@/lib/api/posts';
+import { PostSource } from './PostSource';
 
 type PostContentProps = {
   post: HistoricalPostWithFigure;
@@ -152,6 +153,7 @@ export function PostContent({ post }: PostContentProps) {
                 <span>Comments</span>
               </Button>
             </div>
+            <PostSource source={post.source} />
           </div>
         </div>
       </Card>

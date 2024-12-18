@@ -19,6 +19,7 @@ export type HistoricalPost = {
   original_date: string;
   content: string;
   media_url?: string;
+  source?: string;
   is_significant: boolean;
 };
 

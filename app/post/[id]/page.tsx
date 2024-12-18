@@ -6,10 +6,12 @@ import { PostComments } from '@/components/post/PostComments';
 import { PostSkeleton } from '@/components/post/PostSkeleton';
 import { fetchPost } from '@/lib/api/posts';
 import type { HistoricalPostWithFigure } from '@/lib/supabase';
+import { generateStaticParams } from './generateStaticParams';
 
 // For static export
 export const dynamic = 'force-static';
 export const dynamicParams = false;
+export { generateStaticParams };
 
 export default function PostPage({ params }: { params: { id: string } }) {
   const [post, setPost] = useState<HistoricalPostWithFigure | null>(null);

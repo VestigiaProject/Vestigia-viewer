@@ -14,14 +14,20 @@ export async function fetchPosts(currentDate: Date, page: number = 1, limit: num
       media_url,
       source,
       is_significant,
-      figure:historical_figures(*)
+      figure:historical_figures!inner(
+        id,
+        name,
+        title,
+        biography,
+        profile_image
+      )
     `)
     .lte('original_date', currentDate.toISOString())
     .order('original_date', { ascending: false })
     .range(start, start + limit - 1);
 
   if (error) throw error;
-  return data as HistoricalPostWithFigure[];
+  return data as unknown as HistoricalPostWithFigure[];
 }
 
 export async function fetchPost(id: string) {
@@ -35,13 +41,19 @@ export async function fetchPost(id: string) {
       media_url,
       source,
       is_significant,
-      figure:historical_figures(*)
+      figure:historical_figures!inner(
+        id,
+        name,
+        title,
+        biography,
+        profile_image
+      )
     `)
     .eq('id', id)
     .single();
 
   if (error) throw error;
-  return data as HistoricalPostWithFigure;
+  return data as unknown as HistoricalPostWithFigure;
 }
 
 export async function fetchAllPostIds() {

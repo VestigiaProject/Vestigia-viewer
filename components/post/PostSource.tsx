@@ -8,7 +8,7 @@ import remarkGfm from 'remark-gfm';
 import { useState } from 'react';
 
 type PostSourceProps = {
-  source: string | null;
+  source?: string | null;
 };
 
 export function PostSource({ source }: PostSourceProps) {

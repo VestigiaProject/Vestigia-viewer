@@ -35,7 +35,7 @@ export default function RootLayout({
         >
           <div className="absolute inset-0 bg-black/40" />
         </div>
-        <div className="relative min-h-screen bg-white/80 backdrop-blur-sm">
+        <div className="relative min-h-screen bg-white/60 backdrop-blur-sm">
           <LanguageProvider>
             <TranslationProvider>
               <Toaster />

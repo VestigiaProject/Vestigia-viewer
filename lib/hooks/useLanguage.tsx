@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import * as React from 'react';
 import { useUserProfile } from './useUserProfile';
 import { supabase } from '../supabase';
 
@@ -11,13 +11,13 @@ type LanguageContextType = {
   setLanguage: (lang: Language) => Promise<void>;
 };
 
-const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+const LanguageContext = React.createContext<LanguageContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const { profile } = useUserProfile();
-  const [language, setLanguageState] = useState<Language>('fr');
+  const [language, setLanguageState] = React.useState<Language>('fr');
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (profile?.language) {
       setLanguageState(profile.language as Language);
     }
@@ -39,7 +39,10 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const value = { language, setLanguage };
+  const value = React.useMemo(
+    () => ({ language, setLanguage }),
+    [language]
+  );
 
   return (
     <LanguageContext.Provider value={value}>
@@ -49,7 +52,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useLanguage() {
-  const context = useContext(LanguageContext);
+  const context = React.useContext(LanguageContext);
   if (context === undefined) {
     throw new Error('useLanguage must be used within a LanguageProvider');
   }

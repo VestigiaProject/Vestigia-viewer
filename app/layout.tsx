@@ -29,6 +29,7 @@ export default function RootLayout({
         <LanguageProvider>
           <TranslationProvider>
             <Toaster />
+            <Navbar />
             {children}
           </TranslationProvider>
         </LanguageProvider>

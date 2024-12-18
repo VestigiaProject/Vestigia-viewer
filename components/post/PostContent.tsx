@@ -10,7 +10,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useToast } from '@/components/ui/use-toast';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import type { HistoricalPostWithFigure } from '@/lib/supabase';
 import { fetchPost, fetchPostInteractions } from '@/lib/api/posts';
 import { PostSource } from './PostSource';
@@ -40,13 +40,16 @@ export function PostContent({ post: initialPost }: PostContentProps) {
     }
   };
 
-  // Get current post data from URL state if available
+  // Get current post data from sessionStorage if available
   useEffect(() => {
-    const state = window.history.state;
-    if (state?.currentPost) {
-      setPost(state.currentPost);
-      setLikes(state.currentLikes);
-      setIsLiked(state.currentIsLiked);
+    const storedData = sessionStorage.getItem('currentPostData');
+    if (storedData) {
+      const { post: currentPost, likes: currentLikes, isLiked: currentIsLiked } = JSON.parse(storedData);
+      setPost(currentPost);
+      setLikes(currentLikes);
+      setIsLiked(currentIsLiked);
+      // Clear the stored data after using it
+      sessionStorage.removeItem('currentPostData');
     } else {
       loadFreshPost();
     }
@@ -102,10 +105,10 @@ export function PostContent({ post: initialPost }: PostContentProps) {
     }
   };
 
-  // Only load interactions if we don't have them from URL state
+  // Only load interactions if we don't have them from sessionStorage
   useEffect(() => {
-    const state = window.history.state;
-    if (!state?.currentPost) {
+    const storedData = sessionStorage.getItem('currentPostData');
+    if (!storedData) {
       loadInteractions();
     }
   }, [post.id, user]);

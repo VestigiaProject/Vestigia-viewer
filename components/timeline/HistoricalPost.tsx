@@ -55,15 +55,14 @@ export function HistoricalPost({
 
   const handlePostClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    // Pass the current post data through URL state
-    router.push(`/post/${post.id}`, { 
-      state: { 
-        currentPost: post,
-        currentLikes: likeCount,
-        currentIsLiked: liked,
-        currentComments: comments
-      }
-    });
+    // Store current post data in sessionStorage before navigating
+    sessionStorage.setItem('currentPostData', JSON.stringify({
+      post,
+      likes: likeCount,
+      isLiked: liked,
+      comments
+    }));
+    router.push(`/post/${post.id}`);
   };
 
   return (

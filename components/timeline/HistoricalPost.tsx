@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import { Heart, MessageCircle } from 'lucide-react';
 import type { HistoricalPostWithFigure, UserInteraction } from '@/lib/supabase';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -27,6 +28,7 @@ export function HistoricalPost({
   isLiked,
   comments,
 }: PostProps) {
+  const router = useRouter();
   const [likeCount, setLikeCount] = useState(likes);
   const [liked, setLiked] = useState(isLiked);
   const [loading, setLoading] = useState(false);
@@ -51,11 +53,24 @@ export function HistoricalPost({
     }
   };
 
+  const handlePostClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    // Pass the current post data through URL state
+    router.push(`/post/${post.id}`, { 
+      state: { 
+        currentPost: post,
+        currentLikes: likeCount,
+        currentIsLiked: liked,
+        currentComments: comments
+      }
+    });
+  };
+
   return (
-    <Link href={`/post/${post.id}`}>
-      <Card className="p-4 hover:bg-accent/50 transition-colors">
+    <div onClick={handlePostClick}>
+      <Card className="p-4 hover:bg-accent/50 transition-colors cursor-pointer">
         <div className="flex space-x-4">
-          <Link href={`/profile/${post.figure.id}`}>
+          <Link href={`/profile/${post.figure.id}`} onClick={(e) => e.stopPropagation()}>
             <Avatar>
               <AvatarImage src={post.figure.profile_image} />
               <AvatarFallback>{post.figure.name[0]}</AvatarFallback>
@@ -67,6 +82,7 @@ export function HistoricalPost({
                 <Link
                   href={`/profile/${post.figure.id}`}
                   className="font-semibold hover:underline"
+                  onClick={(e) => e.stopPropagation()}
                 >
                   {post.figure.name}
                 </Link>
@@ -92,7 +108,7 @@ export function HistoricalPost({
                 size="sm"
                 className={`space-x-1 ${liked ? 'text-red-500' : ''}`}
                 onClick={(e) => {
-                  e.preventDefault();
+                  e.stopPropagation();
                   handleLike();
                 }}
                 disabled={loading}
@@ -105,8 +121,8 @@ export function HistoricalPost({
                 size="sm"
                 className="space-x-1"
                 onClick={(e) => {
-                  e.preventDefault();
-                  window.location.href = `/post/${post.id}#comments`;
+                  e.stopPropagation();
+                  router.push(`/post/${post.id}#comments`);
                 }}
               >
                 <MessageCircle className="h-4 w-4" />
@@ -116,6 +132,6 @@ export function HistoricalPost({
           </div>
         </div>
       </Card>
-    </Link>
+    </div>
   );
 }

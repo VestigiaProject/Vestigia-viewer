@@ -10,7 +10,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useToast } from '@/components/ui/use-toast';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import type { HistoricalPostWithFigure } from '@/lib/supabase';
 import { fetchPost, fetchPostInteractions } from '@/lib/api/posts';
 import { PostSource } from './PostSource';
@@ -28,19 +28,27 @@ export function PostContent({ post: initialPost }: PostContentProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Fetch fresh post data on mount
+  // Get current post data from URL state if available
   useEffect(() => {
-    async function loadPost() {
-      try {
-        const freshPost = await fetchPost(initialPost.id);
-        if (freshPost) {
-          setPost(freshPost);
+    const state = window.history.state;
+    if (state?.currentPost) {
+      setPost(state.currentPost);
+      setLikes(state.currentLikes);
+      setIsLiked(state.currentIsLiked);
+    } else {
+      // If no state, fetch fresh data
+      async function loadPost() {
+        try {
+          const freshPost = await fetchPost(initialPost.id);
+          if (freshPost) {
+            setPost(freshPost);
+          }
+        } catch (error) {
+          console.error('Error loading post:', error);
         }
-      } catch (error) {
-        console.error('Error loading post:', error);
       }
+      loadPost();
     }
-    loadPost();
   }, [initialPost.id]);
 
   // Set up real-time subscription for post updates
@@ -71,29 +79,32 @@ export function PostContent({ post: initialPost }: PostContentProps) {
     };
   }, [post.id]);
 
+  // Only load interactions if we don't have them from URL state
   useEffect(() => {
-    async function loadInteractions() {
-      try {
-        const { likes } = await fetchPostInteractions(post.id);
-        setLikes(likes);
+    const state = window.history.state;
+    if (!state?.currentPost) {
+      async function loadInteractions() {
+        try {
+          const { likes } = await fetchPostInteractions(post.id);
+          setLikes(likes);
 
-        if (user) {
-          const { data } = await supabase
-            .from('user_interactions')
-            .select('id')
-            .eq('user_id', user.id)
-            .eq('post_id', post.id)
-            .eq('type', 'like')
-            .single();
+          if (user) {
+            const { data } = await supabase
+              .from('user_interactions')
+              .select('id')
+              .eq('user_id', user.id)
+              .eq('post_id', post.id)
+              .eq('type', 'like')
+              .single();
 
-          setIsLiked(!!data);
+            setIsLiked(!!data);
+          }
+        } catch (error) {
+          console.error('Error loading interactions:', error);
         }
-      } catch (error) {
-        console.error('Error loading interactions:', error);
       }
+      loadInteractions();
     }
-
-    loadInteractions();
   }, [post.id, user]);
 
   const handleLike = async () => {

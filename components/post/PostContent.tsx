@@ -19,6 +19,8 @@ type PostContentProps = {
   post: HistoricalPostWithFigure;
 };
 
+export const revalidate = 0;
+
 export function PostContent({ post: initialPost }: PostContentProps) {
   const router = useRouter();
   const { user } = useAuth();

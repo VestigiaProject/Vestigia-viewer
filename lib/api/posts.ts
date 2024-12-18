@@ -69,6 +69,32 @@ export async function fetchAllPostIds() {
   return data.map(post => post.id);
 }
 
+interface RawComment {
+  id: string;
+  user_id: string;
+  post_id: string;
+  type: string;
+  content: string | null;
+  created_at: string;
+  user: {
+    username: string;
+    avatar_url: string | null;
+  };
+}
+
+interface RawCommentResponse {
+  id: string;
+  user_id: string;
+  post_id: string;
+  type: string;
+  content: string | null;
+  created_at: string;
+  user: {
+    username: string;
+    avatar_url: string | null;
+  }[];
+}
+
 export async function fetchPostInteractions(postId: string) {
   const { data: likes } = await supabase
     .from('user_interactions')
@@ -94,17 +120,19 @@ export async function fetchPostInteractions(postId: string) {
     .eq('type', 'comment')
     .order('created_at', { ascending: true });
 
+  const mappedComments = comments?.map((comment: RawCommentResponse) => ({
+    id: comment.id,
+    user_id: comment.user_id,
+    post_id: comment.post_id,
+    type: 'comment' as const,
+    content: comment.content || '',
+    created_at: comment.created_at,
+    username: comment.user[0].username,
+    avatar_url: comment.user[0].avatar_url || undefined
+  })) || [];
+
   return {
     likes: likes?.length || 0,
-    comments: comments?.map(comment => ({
-      id: comment.id,
-      user_id: comment.user_id,
-      post_id: comment.post_id,
-      type: comment.type as 'comment' | 'like',
-      content: comment.content,
-      created_at: comment.created_at,
-      username: comment.user?.username,
-      avatar_url: comment.user?.avatar_url
-    })) as UserInteraction[] || []
+    comments: mappedComments
   };
 }

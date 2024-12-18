@@ -16,7 +16,7 @@ export function useAuth() {
         setUser(session?.user ?? null);
         setLoading(false);
         if (event === 'SIGNED_OUT') {
-          router.push('/auth');
+          router.push('/');
         }
       }
     );

@@ -47,6 +47,9 @@ export default function Home() {
         <div className="flex flex-col items-center justify-center space-y-8 text-center">
           <ScrollText className="h-20 w-20 text-blue-400" />
           <h1 className="text-4xl md:text-6xl font-bold">{t('landing.title')}</h1>
+          <p className="text-xl md:text-2xl text-blue-400 font-medium">
+            {t('landing.tagline')}
+          </p>
           <p className="text-xl md:text-2xl text-gray-300 max-w-2xl">
             {t('landing.subtitle')}
           </p>

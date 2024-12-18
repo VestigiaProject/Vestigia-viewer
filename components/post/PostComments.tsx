@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/hooks/useLanguage';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabase';
 import { useEffect, useState } from 'react';
@@ -30,6 +31,7 @@ type PostCommentsProps = {
 
 export function PostComments({ postId }: PostCommentsProps) {
   const { user } = useAuth();
+  const { language } = useLanguage();
   const { toast } = useToast();
   const { t } = useTranslation();
   const [comments, setComments] = useState<UserInteraction[]>([]);

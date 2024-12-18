@@ -26,7 +26,7 @@ const START_DATE = '1789-06-01';
 export function Navbar() {
   const { user } = useAuth();
   const { profile } = useUserProfile();
-  const { language, setLanguage } = useLanguage();
+  const { language, setLanguage, isLoading } = useLanguage();
   const { currentDate, daysElapsed } = useTimeProgress(START_DATE);
   const router = useRouter();
   const pathname = usePathname();
@@ -38,8 +38,8 @@ export function Navbar() {
     router.push('/');
   };
 
-  const toggleLanguage = () => {
-    setLanguage(language === 'fr' ? 'en' : 'fr');
+  const toggleLanguage = async () => {
+    await setLanguage(language === 'fr' ? 'en' : 'fr');
   };
 
   if (!user) return null;
@@ -72,7 +72,7 @@ export function Navbar() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={toggleLanguage}>
+              <DropdownMenuItem onClick={toggleLanguage} disabled={isLoading}>
                 <Languages className="mr-2 h-4 w-4" />
                 {language === 'fr' ? 'Switch to English' : 'Passer en français'}
               </DropdownMenuItem>

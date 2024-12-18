@@ -18,13 +18,21 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 // Try to get the initial language from localStorage
 const getInitialLanguage = (): Language => {
   if (typeof window === 'undefined') return 'fr';
-  return (localStorage.getItem('language') as Language) || 'fr';
+  const storedLanguage = localStorage.getItem('language');
+  return (storedLanguage === 'en' || storedLanguage === 'fr') ? storedLanguage : 'fr';
 };
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [language, setLanguageState] = useState<Language>(getInitialLanguage);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Sync with localStorage whenever language changes
+  useEffect(() => {
+    if (language) {
+      localStorage.setItem('language', language);
+    }
+  }, [language]);
 
   // Load language preference from user profile
   useEffect(() => {
@@ -42,8 +50,17 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
           .single();
 
         if (profile?.language) {
-          setLanguageState(profile.language as Language);
-          localStorage.setItem('language', profile.language);
+          const profileLanguage = profile.language as Language;
+          setLanguageState(profileLanguage);
+          localStorage.setItem('language', profileLanguage);
+        } else {
+          // If user has no language preference set, save the current one
+          const { error } = await supabase
+            .from('user_profiles')
+            .update({ language })
+            .eq('id', user.id);
+
+          if (error) throw error;
         }
       } catch (error) {
         console.error('Error loading language preference:', error);
@@ -53,15 +70,15 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     };
 
     loadLanguagePreference();
-  }, [user]);
+  }, [user, language]);
 
   // Save language preference to user profile and localStorage
   const setLanguage = async (newLanguage: Language) => {
-    if (!user) {
-      setLanguageState(newLanguage);
-      localStorage.setItem('language', newLanguage);
-      return;
-    }
+    // Always update state and localStorage immediately
+    setLanguageState(newLanguage);
+    localStorage.setItem('language', newLanguage);
+
+    if (!user) return;
 
     try {
       const { error } = await supabase
@@ -70,9 +87,6 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         .eq('id', user.id);
 
       if (error) throw error;
-
-      setLanguageState(newLanguage);
-      localStorage.setItem('language', newLanguage);
     } catch (error) {
       console.error('Error updating language preference:', error);
     }

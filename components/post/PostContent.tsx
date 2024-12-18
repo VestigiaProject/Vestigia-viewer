@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useUserProfile } from '@/lib/hooks/useUserProfile';
 import { useToast } from '@/components/ui/use-toast';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -22,6 +23,7 @@ type PostContentProps = {
 export function PostContent({ post: initialPost }: PostContentProps) {
   const router = useRouter();
   const { user } = useAuth();
+  const { profile } = useUserProfile();
   const { toast } = useToast();
   const [post, setPost] = useState<HistoricalPostWithFigure>(initialPost);
   const [likes, setLikes] = useState(0);
@@ -149,6 +151,18 @@ export function PostContent({ post: initialPost }: PostContentProps) {
     }
   };
 
+  const getContent = () => {
+    return profile?.language === 'en' && post.content_en
+      ? post.content_en
+      : post.content;
+  };
+
+  const getSource = () => {
+    return profile?.language === 'en' && post.source_en
+      ? post.source_en
+      : post.source;
+  };
+
   return (
     <>
       <div className="mb-4">
@@ -185,7 +199,7 @@ export function PostContent({ post: initialPost }: PostContentProps) {
                 {format(new Date(post.original_date), 'MMMM d, yyyy')}
               </span>
             </div>
-            <p className="text-lg whitespace-pre-wrap">{post.content}</p>
+            <p className="text-lg whitespace-pre-wrap">{getContent()}</p>
             {post.media_url && (
               <img
                 src={post.media_url}
@@ -214,7 +228,7 @@ export function PostContent({ post: initialPost }: PostContentProps) {
                 <span>Comments</span>
               </Button>
             </div>
-            <PostSource source={post.source} />
+            {post.source && <PostSource source={getSource()} />}
           </div>
         </div>
       </Card>

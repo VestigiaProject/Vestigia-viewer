@@ -14,26 +14,48 @@ import { useUserProfile } from '@/lib/hooks/useUserProfile';
 import { useTimeProgress } from '@/lib/hooks/useTimeProgress';
 import { supabase } from '@/lib/supabase';
 import { useRouter, usePathname } from 'next/navigation';
-import { Settings, LogOut, Clock, Calendar } from 'lucide-react';
+import { Settings, LogOut, Clock, Calendar, Languages } from 'lucide-react';
 import { useState } from 'react';
 import { ProfileSettingsDialog } from './ProfileSettingsDialog';
 import { TimePeriodDialog } from './TimePeriodDialog';
 import { format } from 'date-fns';
+import { useToast } from '@/components/ui/use-toast';
 
 const START_DATE = '1789-06-01';
 
 export function Navbar() {
   const { user } = useAuth();
-  const { profile } = useUserProfile();
+  const { profile, updateLanguage } = useUserProfile();
   const { currentDate, daysElapsed } = useTimeProgress(START_DATE);
   const router = useRouter();
   const pathname = usePathname();
   const [showSettings, setShowSettings] = useState(false);
   const [showTimePeriod, setShowTimePeriod] = useState(false);
+  const { toast } = useToast();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/');
+  };
+
+  const handleLanguageToggle = async () => {
+    if (!user) return;
+    const newLanguage = profile?.language === 'en' ? 'fr' : 'en';
+    
+    try {
+      await updateLanguage(newLanguage);
+      toast({
+        title: 'Language Updated',
+        description: newLanguage === 'en' ? 'Switched to English' : 'Changé en Français',
+      });
+    } catch (error) {
+      console.error('Error updating language:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update language preference',
+        variant: 'destructive',
+      });
+    }
   };
 
   if (!user) return null;
@@ -66,6 +88,10 @@ export function Navbar() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleLanguageToggle}>
+                <Languages className="mr-2 h-4 w-4" />
+                {profile?.language === 'en' ? 'Switch to French' : 'Switch to English'}
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setShowTimePeriod(true)}>
                 <Clock className="mr-2 h-4 w-4" />
                 Set Time Period

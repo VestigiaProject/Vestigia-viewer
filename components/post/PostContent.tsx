@@ -14,18 +14,20 @@ import { useRouter } from 'next/navigation';
 import type { HistoricalPostWithFigure } from '@/lib/supabase';
 import { fetchPostInteractions } from '@/lib/api/posts';
 import { PostSource } from './PostSource';
+import { usePostSubscription } from '@/lib/hooks/usePostSubscription';
 
 type PostContentProps = {
   post: HistoricalPostWithFigure;
 };
 
-export function PostContent({ post }: PostContentProps) {
+export function PostContent({ post: initialPost }: PostContentProps) {
   const router = useRouter();
   const { user } = useAuth();
   const { toast } = useToast();
   const [likes, setLikes] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
   const [loading, setLoading] = useState(false);
+  const post = usePostSubscription(initialPost);
 
   useEffect(() => {
     async function loadInteractions() {

@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation';
 import type { HistoricalPostWithFigure } from '@/lib/supabase';
 import { fetchPost, fetchPostInteractions } from '@/lib/api/posts';
 import { PostSource } from './PostSource';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
 type PostContentProps = {
   post: HistoricalPostWithFigure;
@@ -24,6 +25,7 @@ export function PostContent({ post: initialPost }: PostContentProps) {
   const router = useRouter();
   const { user } = useAuth();
   const { language } = useLanguage();
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [post, setPost] = useState<HistoricalPostWithFigure>(initialPost);
   const [likes, setLikes] = useState(0);
@@ -143,8 +145,8 @@ export function PostContent({ post: initialPost }: PostContentProps) {
     } catch (error) {
       console.error('Error:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to like post. Please try again.',
+        title: t('error.generic'),
+        description: t('error.like_failed'),
         variant: 'destructive',
       });
     } finally {
@@ -166,7 +168,7 @@ export function PostContent({ post: initialPost }: PostContentProps) {
           className="text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Timeline
+          {t('app.back_to_timeline')}
         </Button>
       </div>
       <Card className="p-6 mb-8">
@@ -209,7 +211,7 @@ export function PostContent({ post: initialPost }: PostContentProps) {
                 disabled={loading}
               >
                 <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
-                <span>{likes}</span>
+                <span>{t('post.like')} ({likes})</span>
               </Button>
               <Button
                 variant="ghost"
@@ -218,10 +220,10 @@ export function PostContent({ post: initialPost }: PostContentProps) {
                 onClick={() => document.getElementById('comments')?.scrollIntoView({ behavior: 'smooth' })}
               >
                 <MessageCircle className="h-4 w-4" />
-                <span>Comments</span>
+                <span>{t('post.comments')}</span>
               </Button>
             </div>
-            <PostSource source={source} />
+            {source && <PostSource source={source} />}
           </div>
         </div>
       </Card>

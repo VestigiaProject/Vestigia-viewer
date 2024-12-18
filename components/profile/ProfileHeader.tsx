@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { HistoricalFigure } from '@/lib/supabase';
 import { useLanguage } from '@/lib/hooks/useLanguage';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
 type ProfileHeaderProps = {
   figure: HistoricalFigure;
@@ -13,6 +14,7 @@ type ProfileHeaderProps = {
 
 export function ProfileHeader({ figure, postCount }: ProfileHeaderProps) {
   const { language } = useLanguage();
+  const { t } = useTranslation();
 
   const title = language === 'en' && figure.title_en ? figure.title_en : figure.title;
   const biography = language === 'en' && figure.biography_en ? figure.biography_en : figure.biography;
@@ -35,7 +37,7 @@ export function ProfileHeader({ figure, postCount }: ProfileHeaderProps) {
             </div>
             <p className="text-sm">{biography}</p>
             <div className="flex gap-4 text-sm text-muted-foreground">
-              <span>{postCount} posts</span>
+              <span>{postCount} {t('timeline.posts')}</span>
             </div>
           </div>
         </div>

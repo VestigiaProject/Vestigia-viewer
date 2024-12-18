@@ -6,10 +6,12 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
 export default function Home() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const { t } = useTranslation();
   const [authLoading, setAuthLoading] = useState(false);
 
   useEffect(() => {
@@ -44,10 +46,9 @@ export default function Home() {
       <div className="container mx-auto px-4 py-16">
         <div className="flex flex-col items-center justify-center space-y-8 text-center">
           <ScrollText className="h-20 w-20 text-blue-400" />
-          <h1 className="text-4xl md:text-6xl font-bold">Scroll History</h1>
+          <h1 className="text-4xl md:text-6xl font-bold">{t('landing.title')}</h1>
           <p className="text-xl md:text-2xl text-gray-300 max-w-2xl">
-            Experience history as it happened, through the lens of social media.
-            Start your journey with the French Revolution.
+            {t('landing.subtitle')}
           </p>
           <div className="space-y-4">
             <Button
@@ -57,21 +58,21 @@ export default function Home() {
               disabled={authLoading}
             >
               <Chrome className="mr-2 h-5 w-5" />
-              {authLoading ? 'Signing in...' : 'Sign in with Google'}
+              {authLoading ? t('landing.signing_in') : t('landing.signin_google')}
             </Button>
           </div>
           <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl">
             <FeatureCard
-              title="Historical Timeline"
-              description="Experience history chronologically through social media posts from historical figures."
+              title={t('landing.feature.timeline.title')}
+              description={t('landing.feature.timeline.desc')}
             />
             <FeatureCard
-              title="Interactive Experience"
-              description="Like and comment on historical events as they unfold in your timeline."
+              title={t('landing.feature.interactive.title')}
+              description={t('landing.feature.interactive.desc')}
             />
             <FeatureCard
-              title="Real-time Progression"
-              description="Time moves forward from your start date, revealing new historical content."
+              title={t('landing.feature.realtime.title')}
+              description={t('landing.feature.realtime.desc')}
             />
           </div>
         </div>

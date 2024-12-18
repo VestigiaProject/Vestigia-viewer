@@ -21,6 +21,7 @@ import { supabase } from '@/lib/supabase';
 import { useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import type { UserInteraction } from '@/lib/supabase';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
 type PostCommentsProps = {
   postId: string;
@@ -29,6 +30,7 @@ type PostCommentsProps = {
 export function PostComments({ postId }: PostCommentsProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [comments, setComments] = useState<UserInteraction[]>([]);
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
@@ -96,7 +98,6 @@ export function PostComments({ postId }: PostCommentsProps) {
 
       if (error) throw error;
 
-      // Add the new comment with the user's profile information
       setComments(prev => [...prev, {
         ...comment,
         username: userProfile.username,
@@ -105,14 +106,14 @@ export function PostComments({ postId }: PostCommentsProps) {
       setContent('');
       
       toast({
-        title: 'Comment posted',
-        description: 'Your comment has been added successfully.',
+        title: t('comments.posted'),
+        description: t('comments.posted_desc'),
       });
     } catch (error) {
       console.error('Error posting comment:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to post comment. Please try again.',
+        title: t('error.generic'),
+        description: t('error.comment_post_failed'),
         variant: 'destructive',
       });
     } finally {
@@ -126,21 +127,21 @@ export function PostComments({ postId }: PostCommentsProps) {
         .from('user_interactions')
         .delete()
         .eq('id', commentId)
-        .eq('user_id', user?.id); // Ensure the user can only delete their own comments
+        .eq('user_id', user?.id);
 
       if (error) throw error;
 
       setComments(prev => prev.filter(comment => comment.id !== commentId));
       
       toast({
-        title: 'Comment deleted',
-        description: 'Your comment has been deleted successfully.',
+        title: t('comments.deleted'),
+        description: t('comments.deleted_desc'),
       });
     } catch (error) {
       console.error('Error deleting comment:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to delete comment. Please try again.',
+        title: t('error.generic'),
+        description: t('error.comment_delete_failed'),
         variant: 'destructive',
       });
     }
@@ -155,7 +156,7 @@ export function PostComments({ postId }: PostCommentsProps) {
 
   return (
     <div id="comments" className="space-y-6">
-      <h2 className="text-2xl font-semibold">Comments</h2>
+      <h2 className="text-2xl font-semibold">{t('comments.title')}</h2>
       
       <div className="space-y-4">
         <div className="flex gap-4">
@@ -167,7 +168,7 @@ export function PostComments({ postId }: PostCommentsProps) {
           </Avatar>
           <div className="flex-1">
             <Textarea
-              placeholder="Write a comment..."
+              placeholder={t('comments.write')}
               value={content}
               onChange={(e) => setContent(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -177,13 +178,13 @@ export function PostComments({ postId }: PostCommentsProps) {
             />
             <div className="flex justify-between items-center mt-2">
               <span className="text-xs text-muted-foreground">
-                {content.length}/500 characters
+                {content.length}/500 {t('comments.characters')}
               </span>
               <Button
                 onClick={handleSubmit}
                 disabled={!content.trim() || loading}
               >
-                {loading ? 'Posting...' : 'Post Comment'}
+                {loading ? t('comments.posting') : t('comments.post')}
               </Button>
             </div>
           </div>
@@ -193,7 +194,7 @@ export function PostComments({ postId }: PostCommentsProps) {
       <div className="space-y-6">
         {comments.length === 0 ? (
           <p className="text-center text-muted-foreground py-4">
-            No comments yet. Be the first to comment!
+            {t('comments.no_comments')}
           </p>
         ) : (
           comments.map((comment) => (
@@ -223,18 +224,18 @@ export function PostComments({ postId }: PostCommentsProps) {
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Comment</AlertDialogTitle>
+                          <AlertDialogTitle>{t('comments.delete.title')}</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Are you sure you want to delete this comment? This action cannot be undone.
+                            {t('comments.delete.description')}
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogCancel>{t('comments.delete.cancel')}</AlertDialogCancel>
                           <AlertDialogAction
                             onClick={() => handleDelete(comment.id)}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                           >
-                            Delete
+                            {t('comments.delete.confirm')}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>

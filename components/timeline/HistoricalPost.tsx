@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useLanguage } from '@/lib/hooks/useLanguage';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
 type PostProps = {
   post: HistoricalPostWithFigure;
@@ -31,6 +32,7 @@ export function HistoricalPost({
 }: PostProps) {
   const router = useRouter();
   const { language } = useLanguage();
+  const { t } = useTranslation();
   const [likeCount, setLikeCount] = useState(likes);
   const [liked, setLiked] = useState(isLiked);
   const [loading, setLoading] = useState(false);
@@ -46,8 +48,8 @@ export function HistoricalPost({
     } catch (error) {
       console.error('Error liking post:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to like post. Please try again.',
+        title: t('error.generic'),
+        description: t('error.like_failed'),
         variant: 'destructive',
       });
     } finally {
@@ -130,7 +132,7 @@ export function HistoricalPost({
                 }}
               >
                 <MessageCircle className="h-4 w-4" />
-                <span>{comments.length}</span>
+                <span>{t('post.comments')} ({comments.length})</span>
               </Button>
             </div>
           </div>

@@ -1,11 +1,17 @@
 import './globals.css';
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter as FontSans } from 'next/font/google';
 import { Toaster } from '@/components/ui/toaster';
 import { Navbar } from '@/components/layout/Navbar';
 import { LanguageProvider } from '@/lib/hooks/useLanguage';
+import { TranslationProvider } from '@/lib/hooks/useTranslation';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { cn } from '@/lib/utils';
 
-const inter = Inter({ subsets: ['latin'] });
+const fontSans = FontSans({
+  subsets: ['latin'],
+  variable: '--font-sans',
+});
 
 export const metadata: Metadata = {
   title: 'Scroll History - Experience The Past in Real Time',
@@ -18,12 +24,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="en" className={cn('antialiased', fontSans.variable)}>
+      <body className={cn('min-h-screen bg-background font-sans antialiased')}>
         <LanguageProvider>
-          <Navbar />
-          {children}
-          <Toaster />
+          <TranslationProvider>
+            <Toaster />
+            {children}
+          </TranslationProvider>
         </LanguageProvider>
       </body>
     </html>

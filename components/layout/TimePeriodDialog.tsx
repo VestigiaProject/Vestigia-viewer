@@ -12,31 +12,32 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
 type TimePeriodOption = {
   date: string;
-  label: string;
-  description: string;
+  labelKey: string;
+  descriptionKey: string;
   enabled: boolean;
 };
 
 const timePeriods: TimePeriodOption[] = [
   {
     date: '1789-06-01',
-    label: 'The Estates General',
-    description: 'Start from the beginning of the French Revolution',
+    labelKey: 'time.period.estates_general',
+    descriptionKey: 'time.period.estates_general_desc',
     enabled: true,
   },
   {
     date: '1790-07-14',
-    label: 'Fête de la Fédération',
-    description: 'First anniversary of the storming of the Bastille (Coming Soon)',
+    labelKey: 'time.period.federation',
+    descriptionKey: 'time.period.federation_desc',
     enabled: false,
   },
   {
     date: '1792-08-10',
-    label: 'The Fall of the Monarchy',
-    description: 'Beginning of the radical phase of the Revolution (Coming Soon)',
+    labelKey: 'time.period.monarchy_fall',
+    descriptionKey: 'time.period.monarchy_fall_desc',
     enabled: false,
   },
 ];
@@ -49,6 +50,7 @@ type TimePeriodDialogProps = {
 export function TimePeriodDialog({ open, onOpenChange }: TimePeriodDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const handleSelectPeriod = async (period: TimePeriodOption) => {
     if (!user || !period.enabled) return;
@@ -65,8 +67,8 @@ export function TimePeriodDialog({ open, onOpenChange }: TimePeriodDialogProps) 
       if (error) throw error;
 
       toast({
-        title: 'Time Period Updated',
-        description: `Your journey will now start from ${format(new Date(period.date), 'MMMM d, yyyy')}.`,
+        title: t('time.period_updated'),
+        description: t('time.period_updated_desc', { date: format(new Date(period.date), 'MMMM d, yyyy') }),
       });
 
       onOpenChange(false);
@@ -76,8 +78,8 @@ export function TimePeriodDialog({ open, onOpenChange }: TimePeriodDialogProps) 
     } catch (error) {
       console.error('Error updating time period:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to update time period. Please try again.',
+        title: t('error.generic'),
+        description: t('error.time_period_update_failed'),
         variant: 'destructive',
       });
     }
@@ -87,7 +89,7 @@ export function TimePeriodDialog({ open, onOpenChange }: TimePeriodDialogProps) 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold mb-4">Choose Your Starting Point</DialogTitle>
+          <DialogTitle className="text-xl font-semibold mb-4">{t('time.choose_starting_point')}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-3">
           {timePeriods.map((period) => (
@@ -102,9 +104,9 @@ export function TimePeriodDialog({ open, onOpenChange }: TimePeriodDialogProps) 
               onClick={() => period.enabled && handleSelectPeriod(period)}
             >
               <div className="space-y-1">
-                <h3 className="font-medium leading-none">{period.label}</h3>
+                <h3 className="font-medium leading-none">{t(period.labelKey)}</h3>
                 <p className="text-sm text-muted-foreground">
-                  {period.description}
+                  {t(period.descriptionKey)}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {format(new Date(period.date), 'MMMM d, yyyy')}

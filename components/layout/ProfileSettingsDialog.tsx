@@ -14,6 +14,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
 type ProfileSettingsDialogProps = {
   open: boolean;
@@ -26,6 +27,7 @@ export function ProfileSettingsDialog({
 }: ProfileSettingsDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [username, setUsername] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
@@ -70,7 +72,6 @@ export function ProfileSettingsDialog({
       // Upload new avatar if selected
       if (avatarFile) {
         const fileExt = avatarFile.name.split('.').pop();
-        // Ensure the user.id is properly formatted as a UUID
         const filePath = `${user.id}-${Date.now()}.${fileExt}`;
 
         const { error: uploadError, data } = await supabase.storage
@@ -98,16 +99,16 @@ export function ProfileSettingsDialog({
       if (profileError) throw profileError;
 
       toast({
-        title: 'Profile updated',
-        description: 'Your profile has been updated successfully.',
+        title: t('settings.profile_updated'),
+        description: t('settings.profile_updated_desc'),
       });
 
       onOpenChange(false);
     } catch (error) {
       console.error('Error updating profile:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to update profile. Please try again.',
+        title: t('error.generic'),
+        description: t('error.profile_update_failed'),
         variant: 'destructive',
       });
     } finally {
@@ -119,7 +120,7 @@ export function ProfileSettingsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Profile Settings</DialogTitle>
+          <DialogTitle>{t('settings.profile')}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="flex flex-col items-center gap-4">
@@ -137,19 +138,19 @@ export function ProfileSettingsDialog({
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="username">Username</Label>
+            <Label htmlFor="username">{t('settings.username')}</Label>
             <Input
               id="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter your username"
+              placeholder={t('settings.username_placeholder')}
             />
           </div>
           <Button
             onClick={handleSubmit}
             disabled={loading || !username.trim()}
           >
-            {loading ? 'Saving...' : 'Save Changes'}
+            {loading ? t('settings.saving') : t('settings.save_changes')}
           </Button>
         </div>
       </DialogContent>

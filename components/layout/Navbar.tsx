@@ -20,6 +20,7 @@ import { useState } from 'react';
 import { ProfileSettingsDialog } from './ProfileSettingsDialog';
 import { TimePeriodDialog } from './TimePeriodDialog';
 import { format } from 'date-fns';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
 const START_DATE = '1789-06-01';
 
@@ -27,6 +28,7 @@ export function Navbar() {
   const { user } = useAuth();
   const { profile } = useUserProfile();
   const { language, setLanguage, isLoading } = useLanguage();
+  const { t } = useTranslation();
   const { currentDate, daysElapsed } = useTimeProgress(START_DATE);
   const router = useRouter();
   const pathname = usePathname();
@@ -51,12 +53,12 @@ export function Navbar() {
       <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 items-center">
           <div className="flex-1 flex items-center">
-            <div className="font-semibold">Scroll History</div>
+            <div className="font-semibold">{t('app.title')}</div>
             {isTimeline && (
               <div className="ml-4 flex items-center space-x-2 text-sm text-muted-foreground">
                 <Calendar className="h-4 w-4" />
                 <span>{format(currentDate, 'MMMM d, yyyy')}</span>
-                <span className="text-xs">({daysElapsed} days elapsed)</span>
+                <span className="text-xs">({daysElapsed} {t('timeline.days_elapsed')})</span>
               </div>
             )}
           </div>
@@ -74,20 +76,20 @@ export function Navbar() {
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={toggleLanguage} disabled={isLoading}>
                 <Languages className="mr-2 h-4 w-4" />
-                {language === 'fr' ? 'Switch to English' : 'Passer en français'}
+                {language === 'fr' ? t('language.switch_to_english') : t('language.switch_to_french')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setShowTimePeriod(true)}>
                 <Clock className="mr-2 h-4 w-4" />
-                Set Time Period
+                {t('timeline.set_time_period')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setShowSettings(true)}>
                 <Settings className="mr-2 h-4 w-4" />
-                Settings
+                {t('settings.title')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
-                Log out
+                {t('auth.logout')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

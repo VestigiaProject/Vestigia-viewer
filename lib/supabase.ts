@@ -18,10 +18,8 @@ export type HistoricalPost = {
   figure_id: string;
   original_date: string;
   content: string;
-  content_en?: string;
   media_url?: string;
   source?: string;
-  source_en?: string;
   is_significant: boolean;
 };
 
@@ -35,7 +33,6 @@ export type UserProfile = {
   avatar_url?: string;
   start_date: string;
   created_at: string;
-  language?: 'fr' | 'en';
 };
 
 export type UserInteraction = {

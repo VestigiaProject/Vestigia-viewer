@@ -36,20 +36,5 @@ export function useUserProfile() {
     loadProfile();
   }, [user]);
 
-  const updateLanguage = async (language: 'fr' | 'en') => {
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from('user_profiles')
-      .update({ language })
-      .eq('id', user.id)
-      .select()
-      .single();
-
-    if (error) throw error;
-    setProfile(data);
-    return data;
-  };
-
-  return { profile, loading, updateLanguage };
+  return { profile, loading };
 }

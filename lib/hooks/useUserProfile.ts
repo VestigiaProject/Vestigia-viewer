@@ -39,16 +39,30 @@ export function useUserProfile() {
   const updateLanguage = async (language: 'fr' | 'en') => {
     if (!user) return;
 
-    const { data, error } = await supabase
-      .from('user_profiles')
-      .update({ language })
-      .eq('id', user.id)
-      .select()
-      .single();
+    try {
+      // First update the record
+      const { error: updateError } = await supabase
+        .from('user_profiles')
+        .update({ language })
+        .eq('id', user.id);
 
-    if (error) throw error;
-    setProfile(data);
-    return data;
+      if (updateError) throw updateError;
+
+      // Then fetch the updated record
+      const { data, error: fetchError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      setProfile(data);
+      return data;
+    } catch (error) {
+      console.error('Error updating language:', error);
+      throw error;
+    }
   };
 
   return { profile, loading, updateLanguage };

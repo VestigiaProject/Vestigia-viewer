@@ -28,6 +28,18 @@ export function PostContent({ post: initialPost }: PostContentProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Function to load fresh post data
+  const loadFreshPost = async () => {
+    try {
+      const freshPost = await fetchPost(initialPost.id);
+      if (freshPost) {
+        setPost(freshPost);
+      }
+    } catch (error) {
+      console.error('Error loading post:', error);
+    }
+  };
+
   // Get current post data from URL state if available
   useEffect(() => {
     const state = window.history.state;
@@ -36,18 +48,7 @@ export function PostContent({ post: initialPost }: PostContentProps) {
       setLikes(state.currentLikes);
       setIsLiked(state.currentIsLiked);
     } else {
-      // If no state, fetch fresh data
-      async function loadPost() {
-        try {
-          const freshPost = await fetchPost(initialPost.id);
-          if (freshPost) {
-            setPost(freshPost);
-          }
-        } catch (error) {
-          console.error('Error loading post:', error);
-        }
-      }
-      loadPost();
+      loadFreshPost();
     }
   }, [initialPost.id]);
 
@@ -79,30 +80,32 @@ export function PostContent({ post: initialPost }: PostContentProps) {
     };
   }, [post.id]);
 
+  // Function to load interactions
+  const loadInteractions = async () => {
+    try {
+      const { likes } = await fetchPostInteractions(post.id);
+      setLikes(likes);
+
+      if (user) {
+        const { data } = await supabase
+          .from('user_interactions')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('post_id', post.id)
+          .eq('type', 'like')
+          .single();
+
+        setIsLiked(!!data);
+      }
+    } catch (error) {
+      console.error('Error loading interactions:', error);
+    }
+  };
+
   // Only load interactions if we don't have them from URL state
   useEffect(() => {
     const state = window.history.state;
     if (!state?.currentPost) {
-      async function loadInteractions() {
-        try {
-          const { likes } = await fetchPostInteractions(post.id);
-          setLikes(likes);
-
-          if (user) {
-            const { data } = await supabase
-              .from('user_interactions')
-              .select('id')
-              .eq('user_id', user.id)
-              .eq('post_id', post.id)
-              .eq('type', 'like')
-              .single();
-
-            setIsLiked(!!data);
-          }
-        } catch (error) {
-          console.error('Error loading interactions:', error);
-        }
-      }
       loadInteractions();
     }
   }, [post.id, user]);

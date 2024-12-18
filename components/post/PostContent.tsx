@@ -14,7 +14,6 @@ import { useRouter } from 'next/navigation';
 import type { HistoricalPostWithFigure } from '@/lib/supabase';
 import { fetchPostInteractions } from '@/lib/api/posts';
 import { PostSource } from './PostSource';
-import { usePostSubscription } from '@/lib/hooks/usePostSubscription';
 
 type PostContentProps = {
   post: HistoricalPostWithFigure;
@@ -24,10 +23,37 @@ export function PostContent({ post: initialPost }: PostContentProps) {
   const router = useRouter();
   const { user } = useAuth();
   const { toast } = useToast();
+  const [post, setPost] = useState(initialPost);
   const [likes, setLikes] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
   const [loading, setLoading] = useState(false);
-  const post = usePostSubscription(initialPost);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel(`post-${initialPost.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'historical_posts',
+          filter: `id=eq.${initialPost.id}`,
+        },
+        (payload) => {
+          if (payload.new) {
+            setPost({
+              ...post,
+              ...payload.new,
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [initialPost.id]);
 
   useEffect(() => {
     async function loadInteractions() {

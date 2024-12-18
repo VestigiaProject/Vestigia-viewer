@@ -45,7 +45,7 @@ export function PostContent({ post: initialPost }: PostContentProps) {
         async (payload) => {
           if (payload.new) {
             // Fetch the complete post data including the figure information
-            const { data: updatedPost } = await supabase
+            const { data: updatedPost, error } = await supabase
               .from('historical_posts')
               .select(`
                 id,
@@ -65,6 +65,11 @@ export function PostContent({ post: initialPost }: PostContentProps) {
               `)
               .eq('id', initialPost.id)
               .single();
+
+            if (error) {
+              console.error('Error fetching updated post:', error);
+              return;
+            }
 
             if (updatedPost) {
               setPost(updatedPost as unknown as HistoricalPostWithFigure);

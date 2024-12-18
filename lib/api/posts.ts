@@ -23,7 +23,8 @@ export async function fetchPosts(currentDate: Date, page: number = 1, limit: num
         title_en,
         biography,
         biography_en,
-        profile_image
+        profile_image,
+        checkmark
       )
     `)
     .lte('original_date', currentDate.toISOString())
@@ -54,7 +55,8 @@ export async function fetchPost(id: string) {
         title_en,
         biography,
         biography_en,
-        profile_image
+        profile_image,
+        checkmark
       )
     `)
     .eq('id', id)

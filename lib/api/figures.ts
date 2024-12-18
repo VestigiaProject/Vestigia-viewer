@@ -50,8 +50,11 @@ export async function fetchFigurePosts(
         id,
         name,
         title,
+        title_en,
         biography,
-        profile_image
+        biography_en,
+        profile_image,
+        checkmark
       )
     `)
     .eq('figure_id', figureId)

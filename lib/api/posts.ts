@@ -7,7 +7,13 @@ export async function fetchPosts(currentDate: Date, page: number = 1, limit: num
   const { data, error } = await supabase
     .from('historical_posts')
     .select(`
-      *,
+      id,
+      figure_id,
+      original_date,
+      content,
+      media_url,
+      source,
+      is_significant,
       figure:historical_figures(*)
     `)
     .lte('original_date', currentDate.toISOString())
@@ -22,7 +28,13 @@ export async function fetchPost(id: string) {
   const { data, error } = await supabase
     .from('historical_posts')
     .select(`
-      *,
+      id,
+      figure_id,
+      original_date,
+      content,
+      media_url,
+      source,
+      is_significant,
       figure:historical_figures(*)
     `)
     .eq('id', id)
@@ -44,7 +56,7 @@ export async function fetchAllPostIds() {
 export async function fetchPostInteractions(postId: string) {
   const { data: likes, error: likesError } = await supabase
     .from('user_interactions')
-    .select('user_id')
+    .select('id')
     .eq('post_id', postId)
     .eq('type', 'like');
 

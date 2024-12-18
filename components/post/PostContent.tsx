@@ -153,7 +153,7 @@ export function PostContent({ post }: PostContentProps) {
                 <span>Comments</span>
               </Button>
             </div>
-            <PostSource source={post.source} />
+            {post.source && <PostSource source={post.source} />}
           </div>
         </div>
       </Card>

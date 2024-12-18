@@ -12,14 +12,12 @@ import { useToast } from '@/components/ui/use-toast';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { HistoricalPostWithFigure } from '@/lib/supabase';
-import { fetchPostInteractions } from '@/lib/api/posts';
+import { fetchPost, fetchPostInteractions } from '@/lib/api/posts';
 import { PostSource } from './PostSource';
 
 type PostContentProps = {
   post: HistoricalPostWithFigure;
 };
-
-export const revalidate = 0;
 
 export function PostContent({ post: initialPost }: PostContentProps) {
   const router = useRouter();
@@ -30,8 +28,23 @@ export function PostContent({ post: initialPost }: PostContentProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Fetch fresh post data on mount
   useEffect(() => {
-    // Set up real-time subscription for post updates
+    async function loadPost() {
+      try {
+        const freshPost = await fetchPost(initialPost.id);
+        if (freshPost) {
+          setPost(freshPost);
+        }
+      } catch (error) {
+        console.error('Error loading post:', error);
+      }
+    }
+    loadPost();
+  }, [initialPost.id]);
+
+  // Set up real-time subscription for post updates
+  useEffect(() => {
     const channel = supabase
       .channel('post-updates')
       .on(
@@ -40,39 +53,13 @@ export function PostContent({ post: initialPost }: PostContentProps) {
           event: '*',
           schema: 'public',
           table: 'historical_posts',
-          filter: `id=eq.${initialPost.id}`,
+          filter: `id=eq.${post.id}`,
         },
         async (payload) => {
           if (payload.new) {
-            // Fetch the complete post data including the figure information
-            const { data: updatedPost, error } = await supabase
-              .from('historical_posts')
-              .select(`
-                id,
-                figure_id,
-                original_date,
-                content,
-                media_url,
-                source,
-                is_significant,
-                figure:historical_figures!inner(
-                  id,
-                  name,
-                  title,
-                  biography,
-                  profile_image
-                )
-              `)
-              .eq('id', initialPost.id)
-              .single();
-
-            if (error) {
-              console.error('Error fetching updated post:', error);
-              return;
-            }
-
-            if (updatedPost) {
-              setPost(updatedPost as unknown as HistoricalPostWithFigure);
+            const freshPost = await fetchPost(post.id);
+            if (freshPost) {
+              setPost(freshPost);
             }
           }
         }
@@ -82,7 +69,7 @@ export function PostContent({ post: initialPost }: PostContentProps) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [initialPost.id]);
+  }, [post.id]);
 
   useEffect(() => {
     async function loadInteractions() {

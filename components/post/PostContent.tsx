@@ -153,7 +153,7 @@ export function PostContent({ post: initialPost }: PostContentProps) {
   const title = language === 'en' && post.figure.title_en ? post.figure.title_en : post.figure.title;
 
   return (
-    <>
+    <div className="p-6">
       <div className="mb-4">
         <Button
           variant="ghost"
@@ -165,67 +165,65 @@ export function PostContent({ post: initialPost }: PostContentProps) {
           {t('app.back_to_timeline')}
         </Button>
       </div>
-      <Card className="p-6 mb-8">
-        <div className="flex space-x-4">
-          <Link href={`/profile/${post.figure.id}`}>
-            <Avatar className="h-12 w-12">
-              <AvatarImage src={post.figure.profile_image} />
-              <AvatarFallback>{post.figure.name[0]}</AvatarFallback>
-            </Avatar>
-          </Link>
-          <div className="flex-1 space-y-4">
-            <div>
-              <div className="flex items-center gap-1">
-                <Link
-                  href={`/profile/${post.figure.id}`}
-                  className="font-semibold hover:underline"
-                >
-                  {post.figure.name}
-                </Link>
-                {post.figure.checkmark && (
-                  <Check className="h-4 w-4 text-blue-500" />
-                )}
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {title}
-              </p>
-              <span className="text-sm text-muted-foreground">
-                {format(new Date(post.original_date), language === 'fr' ? 'd MMMM yyyy' : 'MMMM d, yyyy', { locale: language === 'fr' ? fr : undefined })}
-              </span>
-            </div>
-            <p className="text-lg whitespace-pre-wrap">{content}</p>
-            {post.media_url && (
-              <img
-                src={post.media_url}
-                alt="Post media"
-                className="rounded-lg max-h-96 object-cover"
-              />
-            )}
-            <div className="flex items-center space-x-4 pt-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                className={`space-x-1 ${isLiked ? 'text-red-500' : ''}`}
-                onClick={handleLike}
-                disabled={loading}
+      <div className="flex space-x-4">
+        <Link href={`/profile/${post.figure.id}`}>
+          <Avatar className="h-12 w-12">
+            <AvatarImage src={post.figure.profile_image} />
+            <AvatarFallback>{post.figure.name[0]}</AvatarFallback>
+          </Avatar>
+        </Link>
+        <div className="flex-1 space-y-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-1">
+              <Link
+                href={`/profile/${post.figure.id}`}
+                className="font-semibold hover:underline"
               >
-                <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
-                <span>{t('post.like')} ({likes})</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="space-x-1"
-                onClick={() => document.getElementById('comments')?.scrollIntoView({ behavior: 'smooth' })}
-              >
-                <MessageCircle className="h-4 w-4" />
-                <span>{t('post.comments')}</span>
-              </Button>
+                {post.figure.name}
+              </Link>
+              {post.figure.checkmark && (
+                <Check className="h-4 w-4 text-blue-500" />
+              )}
             </div>
-            {source && <PostSource source={source} />}
+            <p className="text-sm text-muted-foreground">
+              {title}
+            </p>
+            <span className="text-sm text-muted-foreground">
+              {format(new Date(post.original_date), language === 'fr' ? 'd MMMM yyyy' : 'MMMM d, yyyy', { locale: language === 'fr' ? fr : undefined })}
+            </span>
           </div>
+          <p className="text-base whitespace-pre-wrap leading-relaxed">{content}</p>
+          {post.media_url && (
+            <img
+              src={post.media_url}
+              alt="Post media"
+              className="rounded-lg max-h-96 object-cover"
+            />
+          )}
+          <div className="flex items-center space-x-4 pt-4 border-t">
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`space-x-1 ${isLiked ? 'text-red-500' : ''}`}
+              onClick={handleLike}
+              disabled={loading}
+            >
+              <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
+              <span>{t('post.like')} ({likes})</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="space-x-1"
+              onClick={() => document.getElementById('comments')?.scrollIntoView({ behavior: 'smooth' })}
+            >
+              <MessageCircle className="h-4 w-4" />
+              <span>{t('post.comments')}</span>
+            </Button>
+          </div>
+          {source && <PostSource source={source} />}
         </div>
-      </Card>
-    </>
+      </div>
+    </div>
   );
 }

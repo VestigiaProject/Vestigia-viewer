@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { HistoricalFigure } from '@/lib/supabase';
+import { useLanguage } from '@/lib/hooks/useLanguage';
 
 type ProfileHeaderProps = {
   figure: HistoricalFigure;
@@ -11,6 +12,11 @@ type ProfileHeaderProps = {
 };
 
 export function ProfileHeader({ figure, postCount }: ProfileHeaderProps) {
+  const { language } = useLanguage();
+
+  const title = language === 'en' && figure.title_en ? figure.title_en : figure.title;
+  const biography = language === 'en' && figure.biography_en ? figure.biography_en : figure.biography;
+
   return (
     <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <Card className="rounded-none border-x-0">
@@ -25,9 +31,9 @@ export function ProfileHeader({ figure, postCount }: ProfileHeaderProps) {
             </div>
             <div>
               <h1 className="text-2xl font-bold">{figure.name}</h1>
-              <p className="text-muted-foreground">{figure.title}</p>
+              <p className="text-muted-foreground">{title}</p>
             </div>
-            <p className="text-sm">{figure.biography}</p>
+            <p className="text-sm">{biography}</p>
             <div className="flex gap-4 text-sm text-muted-foreground">
               <span>{postCount} posts</span>
             </div>

@@ -68,6 +68,7 @@ export function HistoricalPost({
   };
 
   const content = language === 'en' && post.content_en ? post.content_en : post.content;
+  const title = language === 'en' && post.figure.title_en ? post.figure.title_en : post.figure.title;
 
   return (
     <div onClick={handlePostClick}>
@@ -90,7 +91,7 @@ export function HistoricalPost({
                   {post.figure.name}
                 </Link>
                 <p className="text-sm text-muted-foreground">
-                  {post.figure.title}
+                  {title}
                 </p>
               </div>
               <span className="text-sm text-muted-foreground">

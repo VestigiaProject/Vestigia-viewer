@@ -9,7 +9,9 @@ export type HistoricalFigure = {
   id: string;
   name: string;
   title: string;
+  title_en?: string;
   biography: string;
+  biography_en?: string;
   profile_image: string;
 };
 

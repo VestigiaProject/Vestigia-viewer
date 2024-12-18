@@ -154,6 +154,7 @@ export function PostContent({ post: initialPost }: PostContentProps) {
 
   const content = language === 'en' && post.content_en ? post.content_en : post.content;
   const source = language === 'en' && post.source_en ? post.source_en : post.source;
+  const title = language === 'en' && post.figure.title_en ? post.figure.title_en : post.figure.title;
 
   return (
     <>
@@ -185,7 +186,7 @@ export function PostContent({ post: initialPost }: PostContentProps) {
                 {post.figure.name}
               </Link>
               <p className="text-sm text-muted-foreground">
-                {post.figure.title}
+                {title}
               </p>
               <span className="text-sm text-muted-foreground">
                 {format(new Date(post.original_date), 'MMMM d, yyyy')}

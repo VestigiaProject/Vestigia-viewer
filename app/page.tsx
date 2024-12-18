@@ -42,21 +42,32 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white">
-      <div className="container mx-auto px-4 py-16">
+    <div className="min-h-screen relative">
+      {/* Background image with overlay */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: 'url("https://images.unsplash.com/photo-1461360370896-922624d12aa1?q=80&w=2074&auto=format&fit=crop")',
+        }}
+      >
+        <div className="absolute inset-0 bg-black/60" />
+      </div>
+
+      {/* Content */}
+      <div className="relative container mx-auto px-4 py-16">
         <div className="flex flex-col items-center justify-center space-y-8 text-center">
           <ScrollText className="h-20 w-20 text-blue-400" />
-          <h1 className="text-4xl md:text-6xl font-bold">{t('landing.title')}</h1>
+          <h1 className="text-4xl md:text-6xl font-bold text-white bg-clip-text">{t('landing.title')}</h1>
           <p className="text-xl md:text-2xl text-blue-400 font-medium">
             {t('landing.tagline')}
           </p>
-          <p className="text-xl md:text-2xl text-gray-300 max-w-2xl">
+          <p className="text-xl md:text-2xl text-gray-200 max-w-2xl">
             {t('landing.subtitle')}
           </p>
           <div className="space-y-4">
             <Button
               size="lg"
-              className="bg-blue-500 hover:bg-blue-600"
+              className="bg-blue-500 hover:bg-blue-600 text-white"
               onClick={handleGoogleLogin}
               disabled={authLoading}
             >
@@ -86,9 +97,9 @@ export default function Home() {
 
 function FeatureCard({ title, description }: { title: string; description: string }) {
   return (
-    <div className="p-6 bg-gray-800 rounded-lg border border-gray-700">
-      <h3 className="text-xl font-semibold mb-2">{title}</h3>
-      <p className="text-gray-400">{description}</p>
+    <div className="p-6 rounded-lg border border-gray-600 bg-black/40 backdrop-blur-sm hover:bg-black/50 transition-colors">
+      <h3 className="text-xl font-semibold mb-2 text-white">{title}</h3>
+      <p className="text-gray-300">{description}</p>
     </div>
   );
 }

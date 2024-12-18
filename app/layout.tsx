@@ -3,9 +3,6 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { Toaster } from '@/components/ui/toaster';
 import { Navbar } from '@/components/layout/Navbar';
-import { LanguageProvider } from '@/lib/hooks/useLanguage';
-import { ThemeProvider } from '@/components/ui/theme-provider';
-import { cn } from '@/lib/utils';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -20,20 +17,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={cn('min-h-screen bg-background font-sans antialiased', inter.variable)}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <LanguageProvider>
-            <Navbar />
-            {children}
-            <Toaster />
-          </LanguageProvider>
-        </ThemeProvider>
+    <html lang="en">
+      <body className={inter.className}>
+        <Navbar />
+        {children}
+        <Toaster />
       </body>
     </html>
   );

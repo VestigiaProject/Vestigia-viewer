@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useUserProfile } from './useUserProfile';
 import { supabase } from '../supabase';
 
@@ -39,8 +39,10 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const value = { language, setLanguage };
+
   return (
-    <LanguageContext.Provider value={{ language, setLanguage }}>
+    <LanguageContext.Provider value={value}>
       {children}
     </LanguageContext.Provider>
   );

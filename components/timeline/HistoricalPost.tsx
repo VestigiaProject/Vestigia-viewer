@@ -63,11 +63,11 @@ export function HistoricalPost({
   // Subscribe to real-time updates
   useEffect(() => {
     const channel = supabase
-      .channel(`post-${post.id}`)
+      .channel(`post-${post.id}-interactions`)
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
           table: 'user_interactions',
           filter: `post_id=eq.${post.id}`,
@@ -83,7 +83,30 @@ export function HistoricalPost({
           }
         }
       )
-      .subscribe();
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'user_interactions',
+          filter: `post_id=eq.${post.id}`,
+        },
+        async () => {
+          try {
+            const interactions = await fetchPostInteractions(post.id, user?.id);
+            setLikeCount(interactions.likes);
+            setLiked(interactions.isLiked || false);
+            setComments(interactions.comments);
+          } catch (error) {
+            console.error('Error updating interactions:', error);
+          }
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log(`Subscribed to interactions for post ${post.id}`);
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);

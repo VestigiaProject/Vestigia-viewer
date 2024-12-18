@@ -11,8 +11,10 @@ export async function fetchPosts(currentDate: Date, page: number = 1, limit: num
       figure_id,
       original_date,
       content,
+      content_en,
       media_url,
       source,
+      source_en,
       is_significant,
       figure:historical_figures!inner(
         id,
@@ -38,8 +40,10 @@ export async function fetchPost(id: string) {
       figure_id,
       original_date,
       content,
+      content_en,
       media_url,
       source,
+      source_en,
       is_significant,
       figure:historical_figures!inner(
         id,
@@ -66,16 +70,19 @@ export async function fetchAllPostIds() {
 }
 
 export async function fetchPostInteractions(postId: string) {
-  const { data: likes, error: likesError } = await supabase
+  const { data: likes } = await supabase
     .from('user_interactions')
     .select('id')
     .eq('post_id', postId)
     .eq('type', 'like');
 
-  const { data: comments, error: commentsError } = await supabase
+  const { data: comments } = await supabase
     .from('user_interactions')
     .select(`
-      *,
+      id,
+      user_id,
+      content,
+      created_at,
       user:user_profiles!user_interactions_user_id_fkey(
         username,
         avatar_url
@@ -85,14 +92,12 @@ export async function fetchPostInteractions(postId: string) {
     .eq('type', 'comment')
     .order('created_at', { ascending: true });
 
-  if (likesError || commentsError) throw likesError || commentsError;
-  
   return {
     likes: likes?.length || 0,
     comments: comments?.map(comment => ({
       ...comment,
       username: comment.user?.username,
       avatar_url: comment.user?.avatar_url
-    })) || [],
+    })) || []
   };
 }

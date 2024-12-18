@@ -37,8 +37,22 @@ export async function fetchFigurePosts(
   const { data, error } = await supabase
     .from('historical_posts')
     .select(`
-      *,
-      figure:historical_figures(*)
+      id,
+      figure_id,
+      original_date,
+      content,
+      content_en,
+      media_url,
+      source,
+      source_en,
+      is_significant,
+      figure:historical_figures!inner(
+        id,
+        name,
+        title,
+        biography,
+        profile_image
+      )
     `)
     .eq('figure_id', figureId)
     .lte('original_date', currentDate.toISOString())
@@ -46,5 +60,5 @@ export async function fetchFigurePosts(
     .range(start, start + limit - 1);
 
   if (error) throw error;
-  return data as HistoricalPostWithFigure[];
+  return data as unknown as HistoricalPostWithFigure[];
 }

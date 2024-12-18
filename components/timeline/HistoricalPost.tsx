@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
+import { useLanguage } from '@/lib/hooks/useLanguage';
 
 type PostProps = {
   post: HistoricalPostWithFigure;
@@ -29,6 +30,7 @@ export function HistoricalPost({
   comments,
 }: PostProps) {
   const router = useRouter();
+  const { language } = useLanguage();
   const [likeCount, setLikeCount] = useState(likes);
   const [liked, setLiked] = useState(isLiked);
   const [loading, setLoading] = useState(false);
@@ -65,6 +67,8 @@ export function HistoricalPost({
     router.push(`/post/${post.id}`);
   };
 
+  const content = language === 'en' && post.content_en ? post.content_en : post.content;
+
   return (
     <div onClick={handlePostClick}>
       <Card className="p-4 hover:bg-accent/50 transition-colors cursor-pointer">
@@ -93,7 +97,7 @@ export function HistoricalPost({
                 {format(new Date(post.original_date), 'MMM d, yyyy')}
               </span>
             </div>
-            <p className="text-sm whitespace-pre-wrap">{post.content}</p>
+            <p className="text-sm whitespace-pre-wrap">{content}</p>
             {post.media_url && (
               <img
                 src={post.media_url}

@@ -1,15 +1,20 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../supabase';
 import type { HistoricalPostWithFigure } from '../supabase';
 
 export function usePostSubscription(initialPost: HistoricalPostWithFigure) {
   const [post, setPost] = useState(initialPost);
+  const isSubscribed = useRef(false);
 
   useEffect(() => {
     // Set initial post
     setPost(initialPost);
+
+    // Prevent duplicate subscriptions
+    if (isSubscribed.current) return;
+    isSubscribed.current = true;
 
     // Function to fetch complete post data
     const fetchCompletePost = async () => {
@@ -41,16 +46,16 @@ export function usePostSubscription(initialPost: HistoricalPostWithFigure) {
 
     // Enable realtime for the historical_posts table
     const channel = supabase
-      .channel('historical_posts_changes')
+      .channel(`post-${initialPost.id}`)
       .on(
         'postgres_changes',
         {
-          event: '*', // Listen to all changes
+          event: '*',
           schema: 'public',
           table: 'historical_posts',
           filter: `id=eq.${initialPost.id}`,
         },
-        async () => {
+        async (payload) => {
           // Fetch complete post data when any change occurs
           await fetchCompletePost();
         }
@@ -58,6 +63,7 @@ export function usePostSubscription(initialPost: HistoricalPostWithFigure) {
       .subscribe();
 
     return () => {
+      isSubscribed.current = false;
       channel.unsubscribe();
     };
   }, [initialPost.id]);

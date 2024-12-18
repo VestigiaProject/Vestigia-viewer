@@ -47,13 +47,7 @@ export async function fetchFigurePosts(
       source,
       source_en,
       is_significant,
-      figure:historical_figures!inner(
-        id,
-        name,
-        title,
-        biography,
-        profile_image
-      )
+      figure:historical_figures(*)
     `)
     .eq('figure_id', figureId)
     .lte('original_date', currentDate.toISOString())
@@ -64,14 +58,9 @@ export async function fetchFigurePosts(
 
   // Transform the data to use the correct language content
   const transformedData = data.map(post => ({
-    id: post.id,
-    figure_id: post.figure_id,
-    original_date: post.original_date,
+    ...post,
     content: language === 'en' && post.content_en ? post.content_en : post.content,
-    media_url: post.media_url,
     source: language === 'en' && post.source_en ? post.source_en : post.source,
-    is_significant: post.is_significant,
-    figure: post.figure as HistoricalFigure
   }));
 
   return transformedData as HistoricalPostWithFigure[];

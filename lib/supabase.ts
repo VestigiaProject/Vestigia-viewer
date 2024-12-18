@@ -35,26 +35,27 @@ export type UserProfile = {
   created_at: string;
 };
 
-export type CommentWithUser = {
+export type BaseInteraction = {
   id: string;
   user_id: string;
   post_id: string;
-  type: 'comment';
-  content: string;
   created_at: string;
-  user: {
-    username: string;
-    avatar_url: string | null;
-  } | null;
 };
 
-export type UserInteraction = {
-  id: string;
-  user_id: string;
-  post_id: string;
-  type: 'comment' | 'like';
-  content?: string;
-  created_at: string;
+export type CommentInteraction = BaseInteraction & {
+  type: 'comment';
+  content: string;
   username?: string;
   avatar_url?: string;
+};
+
+export type LikeInteraction = BaseInteraction & {
+  type: 'like';
+};
+
+export type UserInteraction = CommentInteraction | LikeInteraction;
+
+export type PostInteractions = {
+  likes: number;
+  comments: CommentInteraction[];
 };

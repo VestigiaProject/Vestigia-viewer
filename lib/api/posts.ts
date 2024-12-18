@@ -1,5 +1,9 @@
 import { supabase } from '../supabase';
-import type { HistoricalPostWithFigure, CommentWithUser } from '../supabase';
+import type { 
+  HistoricalPostWithFigure, 
+  CommentInteraction,
+  PostInteractions 
+} from '../supabase';
 
 export async function fetchPosts(currentDate: Date, page: number = 1, limit: number = 10) {
   const start = (page - 1) * limit;
@@ -41,7 +45,7 @@ export async function fetchAllPostIds() {
   return data.map(post => post.id);
 }
 
-export async function fetchPostInteractions(postId: string) {
+export async function fetchPostInteractions(postId: string): Promise<PostInteractions> {
   try {
     const [likesResponse, commentsResponse] = await Promise.all([
       supabase
@@ -71,8 +75,13 @@ export async function fetchPostInteractions(postId: string) {
     if (likesResponse.error) throw likesResponse.error;
     if (commentsResponse.error) throw commentsResponse.error;
 
-    const comments = (commentsResponse.data as CommentWithUser[] || []).map(comment => ({
-      ...comment,
+    const comments = commentsResponse.data.map(comment => ({
+      id: comment.id,
+      user_id: comment.user_id,
+      post_id: comment.post_id,
+      type: 'comment' as const,
+      content: comment.content,
+      created_at: comment.created_at,
       username: comment.user?.username,
       avatar_url: comment.user?.avatar_url
     }));

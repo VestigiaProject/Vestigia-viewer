@@ -23,14 +23,15 @@ export function PostContent({ post: initialPost }: PostContentProps) {
   const router = useRouter();
   const { user } = useAuth();
   const { toast } = useToast();
-  const [post, setPost] = useState(initialPost);
+  const [post, setPost] = useState<HistoricalPostWithFigure>(initialPost);
   const [likes, setLikes] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    // Set up real-time subscription for post updates
     const channel = supabase
-      .channel(`post-${initialPost.id}`)
+      .channel('post-updates')
       .on(
         'postgres_changes',
         {
@@ -39,19 +40,40 @@ export function PostContent({ post: initialPost }: PostContentProps) {
           table: 'historical_posts',
           filter: `id=eq.${initialPost.id}`,
         },
-        (payload) => {
+        async (payload) => {
           if (payload.new) {
-            setPost({
-              ...post,
-              ...payload.new,
-            });
+            // Fetch the complete post data including the figure information
+            const { data: updatedPost } = await supabase
+              .from('historical_posts')
+              .select(`
+                id,
+                figure_id,
+                original_date,
+                content,
+                media_url,
+                source,
+                is_significant,
+                figure:historical_figures!inner(
+                  id,
+                  name,
+                  title,
+                  biography,
+                  profile_image
+                )
+              `)
+              .eq('id', initialPost.id)
+              .single();
+
+            if (updatedPost) {
+              setPost(updatedPost as unknown as HistoricalPostWithFigure);
+            }
           }
         }
       )
       .subscribe();
 
     return () => {
-      channel.unsubscribe();
+      supabase.removeChannel(channel);
     };
   }, [initialPost.id]);
 

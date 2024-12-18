@@ -10,7 +10,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
-import { useLocalization } from '@/lib/hooks/useLocalization';
 
 type PostProps = {
   post: HistoricalPostWithFigure;
@@ -34,9 +33,6 @@ export function HistoricalPost({
   const [liked, setLiked] = useState(isLiked);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { getLocalizedContent } = useLocalization();
-
-  const content = getLocalizedContent(post.content, post.content_en);
 
   const handleLike = async () => {
     if (loading) return;
@@ -97,7 +93,7 @@ export function HistoricalPost({
                 {format(new Date(post.original_date), 'MMM d, yyyy')}
               </span>
             </div>
-            <p className="text-sm whitespace-pre-wrap">{content}</p>
+            <p className="text-sm whitespace-pre-wrap">{post.content}</p>
             {post.media_url && (
               <img
                 src={post.media_url}

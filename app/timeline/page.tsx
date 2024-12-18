@@ -1,6 +1,5 @@
 'use client';
 
-import { TimelineHeader } from '@/components/timeline/TimelineHeader';
 import { HistoricalPost } from '@/components/timeline/HistoricalPost';
 import { useTimeProgress } from '@/lib/hooks/useTimeProgress';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -15,7 +14,7 @@ const START_DATE = '1789-06-01';
 
 export default function TimelinePage() {
   const { user } = useAuth();
-  const { currentDate, daysElapsed } = useTimeProgress(START_DATE);
+  const { currentDate } = useTimeProgress(START_DATE);
   const [posts, setPosts] = useState<HistoricalPostWithFigure[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -120,46 +119,43 @@ export default function TimelinePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <TimelineHeader currentDate={currentDate} daysElapsed={daysElapsed} />
-      <main className="container max-w-2xl mx-auto py-4">
-        {loading ? (
+    <main className="container max-w-2xl mx-auto py-4">
+      {loading ? (
+        <div className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="h-48 w-full" />
+          ))}
+        </div>
+      ) : (
+        <InfiniteScroll
+          dataLength={posts.length}
+          next={() => {
+            setPage((prev) => prev + 1);
+            loadPosts();
+          }}
+          hasMore={hasMore}
+          loader={<Skeleton className="h-48 w-full my-4" />}
+          endMessage={
+            <p className="text-center text-muted-foreground py-4">
+              No more historical posts to load
+            </p>
+          }
+        >
           <div className="space-y-4">
-            {[...Array(3)].map((_, i) => (
-              <Skeleton key={i} className="h-48 w-full" />
+            {posts.map((post) => (
+              <HistoricalPost
+                key={post.id}
+                post={post}
+                onLike={handleLike}
+                onComment={handleComment}
+                likes={postInteractions[post.id]?.likes || 0}
+                isLiked={userLikes.has(post.id)}
+                comments={postInteractions[post.id]?.comments || []}
+              />
             ))}
           </div>
-        ) : (
-          <InfiniteScroll
-            dataLength={posts.length}
-            next={() => {
-              setPage((prev) => prev + 1);
-              loadPosts();
-            }}
-            hasMore={hasMore}
-            loader={<Skeleton className="h-48 w-full my-4" />}
-            endMessage={
-              <p className="text-center text-muted-foreground py-4">
-                No more historical posts to load
-              </p>
-            }
-          >
-            <div className="space-y-4">
-              {posts.map((post) => (
-                <HistoricalPost
-                  key={post.id}
-                  post={post}
-                  onLike={handleLike}
-                  onComment={handleComment}
-                  likes={postInteractions[post.id]?.likes || 0}
-                  isLiked={userLikes.has(post.id)}
-                  comments={postInteractions[post.id]?.comments || []}
-                />
-              ))}
-            </div>
-          </InfiniteScroll>
-        )}
-      </main>
-    </div>
+        </InfiniteScroll>
+      )}
+    </main>
   );
 }

@@ -11,17 +11,23 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useUserProfile } from '@/lib/hooks/useUserProfile';
+import { useTimeProgress } from '@/lib/hooks/useTimeProgress';
 import { supabase } from '@/lib/supabase';
-import { useRouter } from 'next/navigation';
-import { Settings, LogOut, Clock } from 'lucide-react';
+import { useRouter, usePathname } from 'next/navigation';
+import { Settings, LogOut, Clock, Calendar } from 'lucide-react';
 import { useState } from 'react';
 import { ProfileSettingsDialog } from './ProfileSettingsDialog';
 import { TimePeriodDialog } from './TimePeriodDialog';
+import { format } from 'date-fns';
+
+const START_DATE = '1789-06-01';
 
 export function Navbar() {
   const { user } = useAuth();
   const { profile } = useUserProfile();
+  const { currentDate, daysElapsed } = useTimeProgress(START_DATE);
   const router = useRouter();
+  const pathname = usePathname();
   const [showSettings, setShowSettings] = useState(false);
   const [showTimePeriod, setShowTimePeriod] = useState(false);
 
@@ -32,11 +38,22 @@ export function Navbar() {
 
   if (!user) return null;
 
+  const isTimeline = pathname === '/timeline';
+
   return (
     <>
       <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 items-center justify-between">
-          <div className="font-semibold">Scroll History</div>
+        <div className="container flex h-14 items-center">
+          <div className="flex-1 flex items-center">
+            <div className="font-semibold">Scroll History</div>
+            {isTimeline && (
+              <div className="ml-4 flex items-center space-x-2 text-sm text-muted-foreground">
+                <Calendar className="h-4 w-4" />
+                <span>{format(currentDate, 'MMMM d, yyyy')}</span>
+                <span className="text-xs">({daysElapsed} days elapsed)</span>
+              </div>
+            )}
+          </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 rounded-full">

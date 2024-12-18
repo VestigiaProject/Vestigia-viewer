@@ -13,6 +13,7 @@ export type HistoricalFigure = {
   biography: string;
   biography_en?: string;
   profile_image: string;
+  checkmark: boolean;
 };
 
 export type HistoricalPost = {

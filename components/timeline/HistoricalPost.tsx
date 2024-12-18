@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { format } from 'date-fns';
-import { Heart, MessageCircle } from 'lucide-react';
+import { Heart, MessageCircle, Check } from 'lucide-react';
 import type { HistoricalPostWithFigure, UserInteraction } from '@/lib/supabase';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -182,13 +182,18 @@ export function HistoricalPost({
           <div className="flex-1 space-y-2">
             <div className="flex items-center justify-between">
               <div>
-                <Link
-                  href={`/profile/${post.figure.id}`}
-                  className="font-semibold hover:underline"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {post.figure.name}
-                </Link>
+                <div className="flex items-center gap-1">
+                  <Link
+                    href={`/profile/${post.figure.id}`}
+                    className="font-semibold hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {post.figure.name}
+                  </Link>
+                  {post.figure.checkmark && (
+                    <Check className="h-4 w-4 text-blue-500" />
+                  )}
+                </div>
                 <p className="text-sm text-muted-foreground">
                   {title}
                 </p>

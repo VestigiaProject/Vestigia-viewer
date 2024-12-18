@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import type { HistoricalFigure } from '@/lib/supabase';
 import { useLanguage } from '@/lib/hooks/useLanguage';
 import { useTranslation } from '@/lib/hooks/useTranslation';
+import { Check } from 'lucide-react';
 
 type ProfileHeaderProps = {
   figure: HistoricalFigure;
@@ -32,7 +33,12 @@ export function ProfileHeader({ figure, postCount }: ProfileHeaderProps) {
               </Avatar>
             </div>
             <div>
-              <h1 className="text-2xl font-bold">{figure.name}</h1>
+              <div className="flex items-center gap-1">
+                <h1 className="text-2xl font-bold">{figure.name}</h1>
+                {figure.checkmark && (
+                  <Check className="h-5 w-5 text-blue-500" />
+                )}
+              </div>
               <p className="text-muted-foreground">{title}</p>
             </div>
             <p className="text-sm">{biography}</p>

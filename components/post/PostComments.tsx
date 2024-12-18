@@ -211,7 +211,7 @@ export function PostComments({ postId }: PostCommentsProps) {
                   <div className="flex items-center space-x-2">
                     <span className="font-medium">{comment.username}</span>
                     <span className="text-sm text-muted-foreground">
-                      {format(new Date(comment.created_at), 'MMM d, yyyy', { locale: language === 'fr' ? fr : undefined })}
+                      {format(new Date(comment.created_at), language === 'fr' ? 'd MMM yyyy' : 'MMM d, yyyy', { locale: language === 'fr' ? fr : undefined })}
                     </span>
                   </div>
                   {user?.id === comment.user_id && (

@@ -98,7 +98,7 @@ export function HistoricalPost({
                 </p>
               </div>
               <span className="text-sm text-muted-foreground">
-                {format(new Date(post.original_date), 'MMM d, yyyy', { locale: language === 'fr' ? fr : undefined })}
+                {format(new Date(post.original_date), language === 'fr' ? 'd MMM yyyy' : 'MMM d, yyyy', { locale: language === 'fr' ? fr : undefined })}
               </span>
             </div>
             <p className="text-sm whitespace-pre-wrap">{content}</p>

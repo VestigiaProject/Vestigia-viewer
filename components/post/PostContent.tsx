@@ -192,7 +192,7 @@ export function PostContent({ post: initialPost }: PostContentProps) {
                 {title}
               </p>
               <span className="text-sm text-muted-foreground">
-                {format(new Date(post.original_date), 'MMMM d, yyyy', { locale: language === 'fr' ? fr : undefined })}
+                {format(new Date(post.original_date), language === 'fr' ? 'd MMMM yyyy' : 'MMMM d, yyyy', { locale: language === 'fr' ? fr : undefined })}
               </span>
             </div>
             <p className="text-lg whitespace-pre-wrap">{content}</p>

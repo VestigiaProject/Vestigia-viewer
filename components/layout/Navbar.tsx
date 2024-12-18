@@ -58,7 +58,7 @@ export function Navbar() {
             {isTimeline && (
               <div className="ml-4 flex items-center space-x-2 text-sm text-muted-foreground">
                 <Calendar className="h-4 w-4" />
-                <span>{format(currentDate, 'MMMM d, yyyy', { locale: language === 'fr' ? fr : undefined })}</span>
+                <span>{format(currentDate, language === 'fr' ? 'd MMMM yyyy' : 'MMMM d, yyyy', { locale: language === 'fr' ? fr : undefined })}</span>
                 <span className="text-xs">({daysElapsed} {t('timeline.days_elapsed')})</span>
               </div>
             )}

@@ -14,7 +14,7 @@ import { useRouter } from 'next/navigation';
 import type { HistoricalPostWithFigure } from '@/lib/supabase';
 import { fetchPostInteractions } from '@/lib/api/posts';
 import { PostSource } from './PostSource';
-import { usePostPolling } from '@/lib/hooks/usePostPolling';
+import { usePostSubscription } from '@/lib/hooks/usePostSubscription';
 
 type PostContentProps = {
   post: HistoricalPostWithFigure;
@@ -27,7 +27,7 @@ export function PostContent({ post: initialPost }: PostContentProps) {
   const [likes, setLikes] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
   const [loading, setLoading] = useState(false);
-  const post = usePostPolling(initialPost);
+  const post = usePostSubscription(initialPost);
 
   useEffect(() => {
     async function loadInteractions() {

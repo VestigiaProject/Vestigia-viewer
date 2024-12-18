@@ -1,5 +1,5 @@
 import { supabase } from '../supabase';
-import type { HistoricalPostWithFigure } from '../supabase';
+import type { HistoricalPostWithFigure, UserInteraction } from '../supabase';
 
 export async function fetchPosts(currentDate: Date, page: number = 1, limit: number = 10) {
   const start = (page - 1) * limit;
@@ -81,6 +81,8 @@ export async function fetchPostInteractions(postId: string) {
     .select(`
       id,
       user_id,
+      post_id,
+      type,
       content,
       created_at,
       user:user_profiles!user_interactions_user_id_fkey(
@@ -95,9 +97,14 @@ export async function fetchPostInteractions(postId: string) {
   return {
     likes: likes?.length || 0,
     comments: comments?.map(comment => ({
-      ...comment,
+      id: comment.id,
+      user_id: comment.user_id,
+      post_id: comment.post_id,
+      type: comment.type as 'comment' | 'like',
+      content: comment.content,
+      created_at: comment.created_at,
       username: comment.user?.username,
       avatar_url: comment.user?.avatar_url
-    })) || []
+    })) as UserInteraction[] || []
   };
 }

@@ -1,49 +1,18 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import { PostContent } from '@/components/post/PostContent';
-import { PostComments } from '@/components/post/PostComments';
+import { Suspense } from 'react';
 import { PostSkeleton } from '@/components/post/PostSkeleton';
-import { fetchPost } from '@/lib/api/posts';
-import type { HistoricalPostWithFigure } from '@/lib/supabase';
-import { generateStaticParams } from './generateStaticParams';
+import { fetchPost, fetchAllPostIds } from '@/lib/api/posts';
+import { DynamicPost } from './components/DynamicPost';
 
-// For static export
-export const dynamic = 'force-static';
-export const dynamicParams = false;
-export { generateStaticParams };
+export async function generateStaticParams() {
+  const ids = await fetchAllPostIds();
+  return ids.map((id) => ({ id }));
+}
 
-export default function PostPage({ params }: { params: { id: string } }) {
-  const [post, setPost] = useState<HistoricalPostWithFigure | null>(null);
-  const [loading, setLoading] = useState(true);
+export default async function PostPage({ params }: { params: { id: string } }) {
+  // Get initial post data at build time
+  const initialPost = await fetchPost(params.id);
 
-  useEffect(() => {
-    async function loadPost() {
-      try {
-        const data = await fetchPost(params.id);
-        setPost(data);
-      } catch (error) {
-        console.error('Error loading post:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadPost();
-  }, [params.id]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen">
-        <main className="container max-w-2xl mx-auto py-4">
-          <div className="bg-white/95 shadow-sm rounded-lg">
-            <PostSkeleton />
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  if (!post) {
+  if (!initialPost) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-muted-foreground">Post not found</p>
@@ -55,8 +24,9 @@ export default function PostPage({ params }: { params: { id: string } }) {
     <div className="min-h-screen">
       <main className="container max-w-2xl mx-auto py-4">
         <div className="bg-white/95 shadow-sm rounded-lg">
-          <PostContent post={post} />
-          <PostComments postId={post.id} />
+          <Suspense fallback={<PostSkeleton />}>
+            <DynamicPost postId={params.id} initialPost={initialPost} />
+          </Suspense>
         </div>
       </main>
     </div>

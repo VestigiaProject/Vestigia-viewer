@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { PostSkeleton } from '@/components/post/PostSkeleton';
 import { fetchPost, fetchAllPostIds } from '@/lib/api/posts';
-import { DynamicPost } from './components/DynamicPost';
+import { LivePost } from './components/LivePost';
 
 export async function generateStaticParams() {
   const ids = await fetchAllPostIds();
@@ -25,7 +25,7 @@ export default async function PostPage({ params }: { params: { id: string } }) {
       <main className="container max-w-2xl mx-auto py-4">
         <div className="bg-white/95 shadow-sm rounded-lg">
           <Suspense fallback={<PostSkeleton />}>
-            <DynamicPost postId={params.id} initialPost={initialPost} />
+            <LivePost initialPost={initialPost} />
           </Suspense>
         </div>
       </main>

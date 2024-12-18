@@ -4,12 +4,13 @@ import { useEffect, useState } from 'react';
 import { PostContent } from '@/components/post/PostContent';
 import { PostComments } from '@/components/post/PostComments';
 import { fetchPost } from '@/lib/api/posts';
-import { supabase } from '@/lib/supabase';
 import type { HistoricalPostWithFigure } from '@/lib/supabase';
 
 interface LivePostProps {
   initialPost: HistoricalPostWithFigure;
 }
+
+const POLLING_INTERVAL = 5000; // Poll every 5 seconds
 
 export function LivePost({ initialPost }: LivePostProps) {
   const [post, setPost] = useState<HistoricalPostWithFigure>(initialPost);
@@ -18,42 +19,27 @@ export function LivePost({ initialPost }: LivePostProps) {
   const loadPost = async () => {
     try {
       const updatedPost = await fetchPost(initialPost.id);
-      setPost(updatedPost);
+      // Only update if the content has changed
+      if (JSON.stringify(updatedPost) !== JSON.stringify(post)) {
+        setPost(updatedPost);
+        console.log('Post updated:', new Date().toISOString());
+      }
     } catch (error) {
       console.error('Error loading post:', error);
     }
   };
 
-  // Load fresh data on mount
+  // Set up polling
   useEffect(() => {
+    // Initial load
     loadPost();
-  }, []);
 
-  // Subscribe to real-time updates
-  useEffect(() => {
-    const channel = supabase
-      .channel(`post-${initialPost.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'historical_posts',
-          filter: `id=eq.${initialPost.id}`,
-        },
-        async () => {
-          // Reload the post data when changes occur
-          await loadPost();
-        }
-      )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          console.log(`Subscribed to updates for post ${initialPost.id}`);
-        }
-      });
+    // Set up polling interval
+    const intervalId = setInterval(loadPost, POLLING_INTERVAL);
 
+    // Cleanup on unmount
     return () => {
-      supabase.removeChannel(channel);
+      clearInterval(intervalId);
     };
   }, [initialPost.id]);
 

@@ -11,6 +11,7 @@ import { useLanguage } from '@/hooks/useLanguage';
 import { fr } from 'date-fns/locale';
 import { Trash2 } from 'lucide-react';
 import { useUserProfile } from '@/lib/hooks/useUserProfile';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
 interface CommentsProps {
   postId: string;
@@ -28,6 +29,7 @@ export function Comments({ comments, onComment, onDeleteComment }: CommentsProps
   const { user } = useAuth();
   const { profile } = useUserProfile();
   const { language } = useLanguage();
+  const { t } = useTranslation();
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -48,7 +50,7 @@ export function Comments({ comments, onComment, onDeleteComment }: CommentsProps
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold">Comments</h2>
+      <h2 className="text-xl font-semibold">{t('comments.title')}</h2>
 
       {user && (
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -63,7 +65,7 @@ export function Comments({ comments, onComment, onDeleteComment }: CommentsProps
               <Textarea
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Add a comment..."
+                placeholder={t('comments.write')}
                 className="min-h-[100px]"
               />
             </div>
@@ -73,7 +75,7 @@ export function Comments({ comments, onComment, onDeleteComment }: CommentsProps
               type="submit"
               disabled={!newComment.trim() || isSubmitting}
             >
-              {isSubmitting ? 'Posting...' : 'Post Comment'}
+              {isSubmitting ? t('comments.posting') : t('comments.post')}
             </Button>
           </div>
         </form>
@@ -82,7 +84,7 @@ export function Comments({ comments, onComment, onDeleteComment }: CommentsProps
       <div className="space-y-4">
         {comments.length === 0 ? (
           <p className="text-center text-muted-foreground py-4">
-            No comments yet. Be the first to comment!
+            {t('comments.no_comments')}
           </p>
         ) : (
           comments.map((comment) => (
@@ -97,7 +99,7 @@ export function Comments({ comments, onComment, onDeleteComment }: CommentsProps
                 <div className="bg-muted rounded-lg p-4">
                   <div className="flex justify-between items-center mb-2">
                     <span className="font-medium">
-                      {comment.user_profiles?.username || 'Anonymous'}
+                      {comment.user_profiles?.username || user?.email || ''}
                     </span>
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-muted-foreground">
@@ -112,6 +114,8 @@ export function Comments({ comments, onComment, onDeleteComment }: CommentsProps
                           size="icon"
                           className="h-8 w-8 text-muted-foreground hover:text-destructive"
                           onClick={() => onDeleteComment(comment.id)}
+                          title={t('comments.delete.title')}
+                          aria-label={t('comments.delete.title')}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>

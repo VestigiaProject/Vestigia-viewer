@@ -14,6 +14,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
 import type { UserInteraction } from '@/lib/supabase';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
 type CommentWithUser = UserInteraction & {
   user_profiles: {
@@ -25,6 +26,7 @@ type CommentWithUser = UserInteraction & {
 export function PostContent({ id }: { id: string }) {
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [post, setPost] = useState<any>(null);
   const [sourceContent, setSourceContent] = useState<string>('');
   const [error, setError] = useState<boolean>(false);
@@ -291,7 +293,7 @@ export function PostContent({ id }: { id: string }) {
       
       <Accordion type="single" collapsible>
         <AccordionItem value="source">
-          <AccordionTrigger>View Source Content</AccordionTrigger>
+          <AccordionTrigger>{t('post.source')}</AccordionTrigger>
           <AccordionContent>
             <div className="whitespace-pre-wrap p-4 bg-muted rounded-md">
               {sourceContent}

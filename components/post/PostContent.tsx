@@ -12,12 +12,18 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/hooks/useAuth';
+import type { UserInteraction } from '@/lib/supabase';
 
 export function PostContent({ id }: { id: string }) {
   const router = useRouter();
+  const { user } = useAuth();
   const [post, setPost] = useState<any>(null);
   const [sourceContent, setSourceContent] = useState<string>('');
   const [error, setError] = useState<boolean>(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [likes, setLikes] = useState(0);
+  const [comments, setComments] = useState<UserInteraction[]>([]);
   const { language } = useLanguage();
 
   useEffect(() => {
@@ -45,6 +51,37 @@ export function PostContent({ id }: { id: string }) {
         if (sourceData) {
           setSourceContent(sourceData.source);
         }
+
+        // Fetch interactions
+        const [likesData, commentsData] = await Promise.all([
+          supabase
+            .from('user_interactions')
+            .select('*')
+            .eq('post_id', id)
+            .eq('type', 'like'),
+          supabase
+            .from('user_interactions')
+            .select('*, user_profiles(username, avatar_url)')
+            .eq('post_id', id)
+            .eq('type', 'comment')
+            .order('created_at', { ascending: true })
+        ]);
+
+        setLikes(likesData.data?.length || 0);
+        setComments(commentsData.data || []);
+
+        // Check if user has liked the post
+        if (user) {
+          const { data: userLike } = await supabase
+            .from('user_interactions')
+            .select('*')
+            .eq('post_id', id)
+            .eq('user_id', user.id)
+            .eq('type', 'like')
+            .single();
+
+          setIsLiked(!!userLike);
+        }
       } catch (err) {
         console.error('Error fetching post:', err);
         setError(true);
@@ -53,8 +90,8 @@ export function PostContent({ id }: { id: string }) {
 
     fetchPost();
 
-    // Set up realtime subscription for updates
-    const channel = supabase
+    // Set up realtime subscription for post updates
+    const postChannel = supabase
       .channel('post_changes')
       .on(
         'postgres_changes',
@@ -70,7 +107,6 @@ export function PostContent({ id }: { id: string }) {
             return;
           }
 
-          // Fetch the complete updated post with relations
           const { data: updatedPost } = await supabase
             .from('historical_posts')
             .select('*, historical_figures(*)')
@@ -81,7 +117,6 @@ export function PostContent({ id }: { id: string }) {
             setPost(updatedPost);
             setError(false);
 
-            // Also update source content
             const { data: sourceData } = await supabase
               .from(language === 'en' ? 'source_en' : 'historical_posts')
               .select('source')
@@ -96,10 +131,98 @@ export function PostContent({ id }: { id: string }) {
       )
       .subscribe();
 
+    // Set up realtime subscription for interactions
+    const interactionsChannel = supabase
+      .channel('interactions_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_interactions',
+          filter: `post_id=eq.${id}`,
+        },
+        async () => {
+          // Refetch all interactions
+          const [likesData, commentsData] = await Promise.all([
+            supabase
+              .from('user_interactions')
+              .select('*')
+              .eq('post_id', id)
+              .eq('type', 'like'),
+            supabase
+              .from('user_interactions')
+              .select('*, user_profiles(username, avatar_url)')
+              .eq('post_id', id)
+              .eq('type', 'comment')
+              .order('created_at', { ascending: true })
+          ]);
+
+          setLikes(likesData.data?.length || 0);
+          setComments(commentsData.data || []);
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(postChannel);
+      supabase.removeChannel(interactionsChannel);
     };
-  }, [id, language]);
+  }, [id, language, user]);
+
+  const handleLike = async () => {
+    if (!user) return;
+
+    try {
+      if (isLiked) {
+        await supabase
+          .from('user_interactions')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('post_id', id)
+          .eq('type', 'like');
+
+        setIsLiked(false);
+        setLikes(prev => prev - 1);
+      } else {
+        await supabase
+          .from('user_interactions')
+          .insert({
+            user_id: user.id,
+            post_id: id,
+            type: 'like',
+          });
+
+        setIsLiked(true);
+        setLikes(prev => prev + 1);
+      }
+    } catch (error) {
+      console.error('Error handling like:', error);
+    }
+  };
+
+  const handleComment = async (content: string) => {
+    if (!user || !content.trim()) return;
+
+    try {
+      const { data: comment, error } = await supabase
+        .from('user_interactions')
+        .insert({
+          user_id: user.id,
+          post_id: id,
+          type: 'comment',
+          content: content.trim(),
+        })
+        .select('*, user_profiles(username, avatar_url)')
+        .single();
+
+      if (error) throw error;
+
+      setComments(prev => [...prev, comment]);
+    } catch (error) {
+      console.error('Error adding comment:', error);
+    }
+  };
 
   if (error) {
     return (
@@ -115,7 +238,13 @@ export function PostContent({ id }: { id: string }) {
 
   return (
     <div className="max-w-2xl mx-auto p-4 space-y-6">
-      <Post post={post} />
+      <Post 
+        post={post}
+        likes={likes}
+        isLiked={isLiked}
+        commentsCount={comments.length}
+        onLike={handleLike}
+      />
       
       <Accordion type="single" collapsible>
         <AccordionItem value="source">
@@ -129,7 +258,11 @@ export function PostContent({ id }: { id: string }) {
       </Accordion>
 
       <div className="mt-8">
-        <Comments postId={id} />
+        <Comments 
+          postId={id} 
+          comments={comments} 
+          onComment={handleComment}
+        />
       </div>
     </div>
   );

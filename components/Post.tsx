@@ -1,9 +1,10 @@
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
-import { Check } from 'lucide-react';
+import { Check, Heart, MessageCircle } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { fr } from 'date-fns/locale';
 
@@ -24,9 +25,13 @@ interface PostProps {
       checkmark?: boolean;
     };
   };
+  likes: number;
+  isLiked: boolean;
+  commentsCount: number;
+  onLike?: () => void;
 }
 
-export function Post({ post }: PostProps) {
+export function Post({ post, likes, isLiked, commentsCount, onLike }: PostProps) {
   const { language } = useLanguage();
   const content = language === 'en' && post.content_en ? post.content_en : post.content;
   const title = language === 'en' && post.historical_figures.title_en 
@@ -77,6 +82,25 @@ export function Post({ post }: PostProps) {
               className="rounded-lg max-h-96 object-cover mt-2"
             />
           )}
+          <div className="flex items-center space-x-4 mt-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`space-x-1 ${isLiked ? 'text-red-500' : ''}`}
+              onClick={onLike}
+            >
+              <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
+              <span>{likes}</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="space-x-1"
+            >
+              <MessageCircle className="h-4 w-4" />
+              <span>Comments ({commentsCount})</span>
+            </Button>
+          </div>
         </div>
       </div>
     </div>

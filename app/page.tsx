@@ -48,6 +48,10 @@ export default function Home() {
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage: 'url("https://ocubfcrajgjmdzymcwbu.supabase.co/storage/v1/object/public/landingpage/landing1.png")',
+          backgroundSize: 'cover',
+          width: '100vw',
+          height: '100vh',
+          position: 'fixed'
         }}
       >
         <div className="absolute inset-0 bg-black/60" />

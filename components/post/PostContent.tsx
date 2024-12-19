@@ -249,6 +249,24 @@ export function PostContent({ id }: { id: string }) {
     }
   };
 
+  const handleDeleteComment = async (commentId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('user_interactions')
+        .delete()
+        .eq('id', commentId)
+        .eq('user_id', user.id); // Extra safety check
+
+      if (error) throw error;
+
+      setComments(prev => prev.filter(comment => comment.id !== commentId));
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+    }
+  };
+
   if (error) {
     return (
       <div className="max-w-2xl mx-auto p-4">
@@ -287,6 +305,7 @@ export function PostContent({ id }: { id: string }) {
           postId={id} 
           comments={comments} 
           onComment={handleComment}
+          onDeleteComment={handleDeleteComment}
         />
       </div>
     </div>

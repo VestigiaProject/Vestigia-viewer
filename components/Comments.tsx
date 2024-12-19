@@ -9,6 +9,8 @@ import type { UserInteraction } from '@/lib/supabase';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
 import { fr } from 'date-fns/locale';
+import { Trash2 } from 'lucide-react';
+import { useUserProfile } from '@/lib/hooks/useUserProfile';
 
 interface CommentsProps {
   postId: string;
@@ -16,13 +18,15 @@ interface CommentsProps {
     user_profiles: {
       username: string | null;
       avatar_url: string | null;
-    } | null;
+    };
   })[];
   onComment: (content: string) => Promise<void>;
+  onDeleteComment?: (commentId: string) => Promise<void>;
 }
 
-export function Comments({ comments, onComment }: CommentsProps) {
+export function Comments({ comments, onComment, onDeleteComment }: CommentsProps) {
   const { user } = useAuth();
+  const { profile } = useUserProfile();
   const { language } = useLanguage();
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -48,18 +52,30 @@ export function Comments({ comments, onComment }: CommentsProps) {
 
       {user && (
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Textarea
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            placeholder="Add a comment..."
-            className="min-h-[100px]"
-          />
-          <Button
-            type="submit"
-            disabled={!newComment.trim() || isSubmitting}
-          >
-            {isSubmitting ? 'Posting...' : 'Post Comment'}
-          </Button>
+          <div className="flex gap-4">
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={profile?.avatar_url || undefined} />
+              <AvatarFallback>
+                {profile?.username?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1">
+              <Textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Add a comment..."
+                className="min-h-[100px]"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <Button
+              type="submit"
+              disabled={!newComment.trim() || isSubmitting}
+            >
+              {isSubmitting ? 'Posting...' : 'Post Comment'}
+            </Button>
+          </div>
         </form>
       )}
 
@@ -83,12 +99,24 @@ export function Comments({ comments, onComment }: CommentsProps) {
                     <span className="font-medium">
                       {comment.user_profiles?.username || 'Anonymous'}
                     </span>
-                    <span className="text-sm text-muted-foreground">
-                      {formatDistanceToNow(new Date(comment.created_at), {
-                        addSuffix: true,
-                        locale: language === 'fr' ? fr : undefined
-                      })}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">
+                        {formatDistanceToNow(new Date(comment.created_at), {
+                          addSuffix: true,
+                          locale: language === 'fr' ? fr : undefined
+                        })}
+                      </span>
+                      {user && comment.user_id === user.id && onDeleteComment && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          onClick={() => onDeleteComment(comment.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   <p className="whitespace-pre-wrap">{comment.content}</p>
                 </div>

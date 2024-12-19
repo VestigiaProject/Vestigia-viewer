@@ -2,46 +2,37 @@ import { Suspense } from 'react';
 import { PostSkeleton } from '@/components/post/PostSkeleton';
 import { fetchPost, fetchAllPostIds } from '@/lib/api/posts';
 import { DynamicPost } from './components/DynamicPost';
-import { notFound } from 'next/navigation';
 
-// Generate static pages for all posts at build time
+// Add generateStaticParams back for static export
 export async function generateStaticParams() {
-  try {
-    const ids = await fetchAllPostIds();
-    return ids.map((id) => ({ id }));
-  } catch (error) {
-    console.error('Error generating static params:', error);
-    return [];
-  }
+  const ids = await fetchAllPostIds();
+  return ids.map((id) => ({ id }));
 }
 
-// Enable static generation with fallback
-export const dynamicParams = true; // true -> fallback to SSR
-export const dynamic = 'auto'; // auto -> allow both static and dynamic
-export const revalidate = 0; // revalidate on every request
+// Use ISR with a short revalidation period
+export const revalidate = 60; // Revalidate every minute
 
 export default async function PostPage({ params }: { params: { id: string } }) {
-  try {
-    // Get initial post data
-    const initialPost = await fetchPost(params.id);
+  // Get initial post data
+  const initialPost = await fetchPost(params.id);
 
-    if (!initialPost) {
-      notFound();
-    }
-
+  if (!initialPost) {
     return (
-      <div className="min-h-screen">
-        <main className="container max-w-2xl mx-auto py-4">
-          <div className="bg-white/95 shadow-sm rounded-lg">
-            <Suspense fallback={<PostSkeleton />}>
-              <DynamicPost postId={params.id} initialPost={initialPost} />
-            </Suspense>
-          </div>
-        </main>
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Post not found</p>
       </div>
     );
-  } catch (error) {
-    console.error('Error loading post:', error);
-    notFound();
   }
+
+  return (
+    <div className="min-h-screen">
+      <main className="container max-w-2xl mx-auto py-4">
+        <div className="bg-white/95 shadow-sm rounded-lg">
+          <Suspense fallback={<PostSkeleton />}>
+            <DynamicPost postId={params.id} initialPost={initialPost} />
+          </Suspense>
+        </div>
+      </main>
+    </div>
+  );
 }

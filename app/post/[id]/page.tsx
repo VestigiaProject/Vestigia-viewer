@@ -3,14 +3,16 @@ import { PostSkeleton } from '@/components/post/PostSkeleton';
 import { fetchPost, fetchAllPostIds } from '@/lib/api/posts';
 import { DynamicPost } from './components/DynamicPost';
 
-// Add generateStaticParams back for static export
+// Generate static pages for all posts at build time
 export async function generateStaticParams() {
   const ids = await fetchAllPostIds();
   return ids.map((id) => ({ id }));
 }
 
-// Use ISR with a short revalidation period
-export const revalidate = 60; // Revalidate every minute
+// Enable static generation with dynamic data
+export const dynamic = 'force-static';
+export const dynamicParams = true;
+export const revalidate = 0; // Revalidate on every request
 
 export default async function PostPage({ params }: { params: { id: string } }) {
   // Get initial post data

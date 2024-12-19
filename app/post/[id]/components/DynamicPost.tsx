@@ -19,10 +19,43 @@ export function DynamicPost({ postId, initialPost }: DynamicPostProps) {
   const [userLikes, setUserLikes] = useState<Set<string>>(new Set());
   const [postInteractions, setPostInteractions] = useState<{ likes: number; comments: UserInteraction[] }>({ likes: 0, comments: [] });
 
+  // Load initial data and set up real-time subscription
   useEffect(() => {
-    setPost(initialPost);
     loadInitialData();
-  }, [initialPost]);
+
+    // Subscribe to real-time updates for the post
+    const channel = supabase
+      .channel(`post-${postId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'historical_posts',
+          filter: `id=eq.${postId}`,
+        },
+        async () => {
+          try {
+            const [newPost, interactions] = await Promise.all([
+              fetchPost(postId),
+              fetchPostInteractions(postId)
+            ]);
+            
+            if (newPost) {
+              setPost(newPost);
+              setPostInteractions(interactions);
+            }
+          } catch (error) {
+            console.error('Error updating post:', error);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [postId]);
 
   async function loadInitialData() {
     try {
@@ -64,6 +97,10 @@ export function DynamicPost({ postId, initialPost }: DynamicPostProps) {
         next.delete(postId);
         return next;
       });
+      setPostInteractions(prev => ({
+        ...prev,
+        likes: prev.likes - 1
+      }));
     } else {
       await supabase
         .from('user_interactions')
@@ -74,6 +111,10 @@ export function DynamicPost({ postId, initialPost }: DynamicPostProps) {
         });
 
       setUserLikes(prev => new Set([...prev, postId]));
+      setPostInteractions(prev => ({
+        ...prev,
+        likes: prev.likes + 1
+      }));
     }
   }
 
@@ -98,36 +139,6 @@ export function DynamicPost({ postId, initialPost }: DynamicPostProps) {
       comments: [...prev.comments, comment],
     }));
   }
-
-  // Subscribe to real-time updates
-  useEffect(() => {
-    const channel = supabase
-      .channel(`post-${postId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'historical_posts',
-          filter: `id=eq.${postId}`,
-        },
-        async () => {
-          try {
-            const data = await fetchPost(postId);
-            if (data) {
-              setPost(data);
-            }
-          } catch (error) {
-            console.error('Error updating post:', error);
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [postId]);
 
   return (
     <div className="bg-white/95 shadow-sm rounded-lg">

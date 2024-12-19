@@ -94,6 +94,16 @@ export default function Home() {
                 description={t('landing.feature.realtime.desc')}
               />
             </div>
+            
+            {/* Logo section */}
+            <div className="mt-16 flex flex-col items-center space-y-4">
+              <p className="text-gray-300 text-sm">{t('landing.logo')}</p>
+              <img 
+                src="/vestigialogo.png" 
+                alt="Vestigia Logo" 
+                className="h-12 w-auto opacity-70 hover:opacity-100 transition-opacity"
+              />
+            </div>
           </div>
         </div>
       </div>

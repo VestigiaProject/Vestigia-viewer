@@ -101,7 +101,7 @@ export default function Home() {
               <img 
                 src="/vestigialogo.png" 
                 alt="Vestigia Logo" 
-                className="h-12 w-auto opacity-70 hover:opacity-100 transition-opacity"
+                className="h-18 w-auto opacity-70 hover:opacity-100 transition-opacity"
               />
             </div>
           </div>

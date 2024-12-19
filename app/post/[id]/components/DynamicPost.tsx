@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { PostContent } from '@/components/post/PostContent';
 import { PostComments } from '@/components/post/PostComments';
 import { fetchPost } from '@/lib/api/posts';
@@ -14,9 +14,9 @@ interface DynamicPostProps {
 
 export function DynamicPost({ postId, initialPost }: DynamicPostProps) {
   const [post, setPost] = useState<HistoricalPostWithFigure>(initialPost);
+  const lastUpdateRef = useRef<string>('');
 
   useEffect(() => {
-    // Set initial post when it changes
     setPost(initialPost);
   }, [initialPost]);
 
@@ -41,7 +41,12 @@ export function DynamicPost({ postId, initialPost }: DynamicPostProps) {
           try {
             const data = await fetchPost(postId);
             if (data) {
-              setPost(data);
+              // Update only if the data has actually changed
+              const newDataString = JSON.stringify(data);
+              if (newDataString !== lastUpdateRef.current) {
+                lastUpdateRef.current = newDataString;
+                setPost(data);
+              }
             }
           } catch (error) {
             console.error('Error updating post:', error);
@@ -58,19 +63,27 @@ export function DynamicPost({ postId, initialPost }: DynamicPostProps) {
     const intervalId = setInterval(async () => {
       try {
         const data = await fetchPost(postId);
-        if (data && JSON.stringify(data) !== JSON.stringify(post)) {
-          setPost(data);
+        if (data) {
+          // Update only if the data has actually changed
+          const newDataString = JSON.stringify(data);
+          if (newDataString !== lastUpdateRef.current) {
+            lastUpdateRef.current = newDataString;
+            setPost(data);
+          }
         }
       } catch (error) {
         console.error('Error checking for updates:', error);
       }
     }, 60000); // Check every minute
 
+    // Initialize lastUpdateRef with the initial post
+    lastUpdateRef.current = JSON.stringify(initialPost);
+
     return () => {
       supabase.removeChannel(channel);
       clearInterval(intervalId);
     };
-  }, [postId, post]);
+  }, [postId]); // Only depend on postId
 
   return (
     <>

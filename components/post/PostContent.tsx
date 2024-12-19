@@ -15,6 +15,13 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
 import type { UserInteraction } from '@/lib/supabase';
 
+type CommentWithUser = UserInteraction & {
+  user_profiles: {
+    username: string | null;
+    avatar_url: string | null;
+  } | null;
+};
+
 export function PostContent({ id }: { id: string }) {
   const router = useRouter();
   const { user } = useAuth();
@@ -23,7 +30,7 @@ export function PostContent({ id }: { id: string }) {
   const [error, setError] = useState<boolean>(false);
   const [isLiked, setIsLiked] = useState(false);
   const [likes, setLikes] = useState(0);
-  const [comments, setComments] = useState<UserInteraction[]>([]);
+  const [comments, setComments] = useState<CommentWithUser[]>([]);
   const { language } = useLanguage();
 
   useEffect(() => {
@@ -225,12 +232,18 @@ export function PostContent({ id }: { id: string }) {
           type: 'comment',
           content: content.trim(),
         })
-        .select('*, user_profiles(username, avatar_url)')
+        .select(`
+          *,
+          user_profiles!user_id (
+            username,
+            avatar_url
+          )
+        `)
         .single();
 
       if (error) throw error;
 
-      setComments(prev => [...prev, comment]);
+      setComments(prev => [...prev, comment as CommentWithUser]);
     } catch (error) {
       console.error('Error adding comment:', error);
     }

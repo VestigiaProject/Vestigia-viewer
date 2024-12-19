@@ -12,7 +12,12 @@ import { fr } from 'date-fns/locale';
 
 interface CommentsProps {
   postId: string;
-  comments: UserInteraction[];
+  comments: (UserInteraction & {
+    user_profiles: {
+      username: string | null;
+      avatar_url: string | null;
+    } | null;
+  })[];
   onComment: (content: string) => Promise<void>;
 }
 
@@ -67,9 +72,9 @@ export function Comments({ comments, onComment }: CommentsProps) {
           comments.map((comment) => (
             <div key={comment.id} className="flex space-x-4">
               <Avatar className="h-10 w-10">
-                <AvatarImage src={comment.user_profiles?.avatar_url} />
+                <AvatarImage src={comment.user_profiles?.avatar_url || undefined} />
                 <AvatarFallback>
-                  {comment.user_profiles?.username?.[0].toUpperCase() || 'U'}
+                  {comment.user_profiles?.username?.[0]?.toUpperCase() || 'U'}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">

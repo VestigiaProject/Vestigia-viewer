@@ -61,7 +61,13 @@ export function PostContent({ id }: { id: string }) {
             .eq('type', 'like'),
           supabase
             .from('user_interactions')
-            .select('*, user_profiles(username, avatar_url)')
+            .select(`
+              *,
+              user_profiles!user_id(
+                username,
+                avatar_url
+              )
+            `)
             .eq('post_id', id)
             .eq('type', 'comment')
             .order('created_at', { ascending: true })
@@ -152,7 +158,13 @@ export function PostContent({ id }: { id: string }) {
               .eq('type', 'like'),
             supabase
               .from('user_interactions')
-              .select('*, user_profiles(username, avatar_url)')
+              .select(`
+                *,
+                user_profiles!user_id(
+                  username,
+                  avatar_url
+                )
+              `)
               .eq('post_id', id)
               .eq('type', 'comment')
               .order('created_at', { ascending: true })

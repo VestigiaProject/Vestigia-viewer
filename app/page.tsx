@@ -45,13 +45,13 @@ export default function Home() {
     <div className="min-h-screen relative">
       {/* Background image with overlay */}
       <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        className="fixed inset-0 bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage: 'url("https://ocubfcrajgjmdzymcwbu.supabase.co/storage/v1/object/public/landingpage/landing1.png")',
           backgroundSize: 'cover',
-          width: '100vw',
-          height: '100vh',
-          position: 'fixed'
+          backgroundPosition: 'center',
+          width: '100%',
+          height: '100%'
         }}
       >
         <div className="absolute inset-0 bg-black/60" />

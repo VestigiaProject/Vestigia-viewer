@@ -19,7 +19,7 @@ type CommentWithUser = UserInteraction & {
   user_profiles: {
     username: string | null;
     avatar_url: string | null;
-  } | null;
+  };
 };
 
 export function PostContent({ id }: { id: string }) {
@@ -70,7 +70,7 @@ export function PostContent({ id }: { id: string }) {
             .from('user_interactions')
             .select(`
               *,
-              user_profiles!user_id(
+              user_profiles (
                 username,
                 avatar_url
               )
@@ -167,7 +167,7 @@ export function PostContent({ id }: { id: string }) {
               .from('user_interactions')
               .select(`
                 *,
-                user_profiles!user_id(
+                user_profiles (
                   username,
                   avatar_url
                 )
@@ -234,7 +234,7 @@ export function PostContent({ id }: { id: string }) {
         })
         .select(`
           *,
-          user_profiles!user_id (
+          user_profiles (
             username,
             avatar_url
           )

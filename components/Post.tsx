@@ -7,6 +7,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { Check, Heart, MessageCircle } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { fr } from 'date-fns/locale';
+import { useState } from 'react';
 
 interface PostProps {
   post: {
@@ -36,6 +37,7 @@ const isVideoUrl = (url: string) => {
 };
 
 export function Post({ post, likes, isLiked, commentsCount, onLike }: PostProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
   const { language } = useLanguage();
   const content = language === 'en' && post.content_en ? post.content_en : post.content;
   const title = language === 'en' && post.historical_figures.title_en 
@@ -81,15 +83,25 @@ export function Post({ post, likes, isLiked, commentsCount, onLike }: PostProps)
           <p className="mt-2 text-base whitespace-pre-wrap">{content}</p>
           {post.media_url && (
             isVideoUrl(post.media_url) ? (
-              <video
-                src={post.media_url}
-                className="rounded-lg w-full object-contain mt-2"
-                controls
-                autoPlay
-                muted
-                loop
-                playsInline
-              />
+              <div 
+                className={`relative mt-2 ${isExpanded ? '' : 'max-h-[32rem] overflow-hidden'}`}
+                onClick={() => setIsExpanded(!isExpanded)}
+              >
+                <video
+                  src={post.media_url}
+                  className="rounded-lg w-full object-contain cursor-pointer"
+                  controls
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                />
+                {!isExpanded && (
+                  <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/50 to-transparent flex items-center justify-center">
+                    <span className="text-white text-sm">Click to expand</span>
+                  </div>
+                )}
+              </div>
             ) : (
               <img
                 src={post.media_url}

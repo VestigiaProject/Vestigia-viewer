@@ -46,6 +46,7 @@ export function HistoricalPost({
   const [liked, setLiked] = useState(initialIsLiked);
   const [comments, setComments] = useState(initialComments);
   const [loading, setLoading] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const { toast } = useToast();
 
   // Load initial interactions
@@ -209,16 +210,29 @@ export function HistoricalPost({
             <p className="text-sm whitespace-pre-wrap">{content}</p>
             {post.media_url && (
               isVideoUrl(post.media_url) ? (
-                <video
-                  src={post.media_url}
-                  className="rounded-lg w-full object-contain mt-2"
-                  controls
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  onClick={(e) => e.stopPropagation()}
-                />
+                <div 
+                  className={`relative mt-2 ${isExpanded ? '' : 'max-h-[32rem] overflow-hidden'}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsExpanded(!isExpanded);
+                  }}
+                >
+                  <video
+                    src={post.media_url}
+                    className="rounded-lg w-full object-contain cursor-pointer"
+                    controls
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  {!isExpanded && (
+                    <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/50 to-transparent flex items-center justify-center">
+                      <span className="text-white text-sm">Click to expand</span>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <img
                   src={post.media_url}

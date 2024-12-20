@@ -83,7 +83,7 @@ export function Post({ post, likes, isLiked, commentsCount, onLike }: PostProps)
             isVideoUrl(post.media_url) ? (
               <video
                 src={post.media_url}
-                className="rounded-lg max-h-96 w-full object-cover mt-2"
+                className="rounded-lg w-full object-contain mt-2"
                 controls
                 autoPlay
                 muted

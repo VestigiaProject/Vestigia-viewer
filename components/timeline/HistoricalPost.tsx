@@ -8,7 +8,7 @@ import { Heart, MessageCircle, Check } from 'lucide-react';
 import type { HistoricalPostWithFigure, UserInteraction } from '@/lib/supabase';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useLanguage } from '@/lib/hooks/useLanguage';
 import { useTranslation } from '@/lib/hooks/useTranslation';
@@ -42,12 +42,37 @@ export function HistoricalPost({
   const { user } = useAuth();
   const { language } = useLanguage();
   const { t } = useTranslation();
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [likeCount, setLikeCount] = useState(initialLikes);
   const [liked, setLiked] = useState(initialIsLiked);
   const [comments, setComments] = useState(initialComments);
   const [loading, setLoading] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (!videoRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            videoRef.current?.play().catch(() => {
+              // Autoplay was prevented
+            });
+          } else {
+            videoRef.current?.pause();
+          }
+        });
+      },
+      { threshold: 0.2 }
+    );
+
+    observer.observe(videoRef.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   // Load initial interactions
   useEffect(() => {
@@ -210,34 +235,26 @@ export function HistoricalPost({
             <p className="text-sm whitespace-pre-wrap">{content}</p>
             {post.media_url && (
               isVideoUrl(post.media_url) ? (
-                <div 
-                  className={`relative mt-2 ${isExpanded ? '' : 'max-h-[32rem] overflow-hidden'}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsExpanded(!isExpanded);
-                  }}
-                >
-                  <video
-                    src={post.media_url}
-                    className="rounded-lg w-full object-contain cursor-pointer"
-                    controls
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                  {!isExpanded && (
-                    <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/50 to-transparent flex items-center justify-center">
-                      <span className="text-white text-sm">Click to expand</span>
-                    </div>
-                  )}
-                </div>
+                <video
+                  ref={videoRef}
+                  src={post.media_url}
+                  className="rounded-lg w-full object-contain mt-2"
+                  controls
+                  muted
+                  loop
+                  playsInline
+                  preload="metadata"
+                  loading="lazy"
+                  controlsList="nodownload"
+                  onClick={(e) => e.stopPropagation()}
+                />
               ) : (
                 <img
                   src={post.media_url}
                   alt="Post media"
                   className="rounded-lg max-h-96 object-cover mt-2"
+                  loading="lazy"
+                  decoding="async"
                 />
               )
             )}

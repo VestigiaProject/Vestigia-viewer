@@ -7,7 +7,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { Check, Heart, MessageCircle } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { fr } from 'date-fns/locale';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 interface PostProps {
   post: {
@@ -37,12 +37,37 @@ const isVideoUrl = (url: string) => {
 };
 
 export function Post({ post, likes, isLiked, commentsCount, onLike }: PostProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const { language } = useLanguage();
   const content = language === 'en' && post.content_en ? post.content_en : post.content;
   const title = language === 'en' && post.historical_figures.title_en 
     ? post.historical_figures.title_en 
     : post.historical_figures.title;
+
+  useEffect(() => {
+    if (!videoRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            videoRef.current?.play().catch(() => {
+              // Autoplay was prevented
+            });
+          } else {
+            videoRef.current?.pause();
+          }
+        });
+      },
+      { threshold: 0.2 }
+    );
+
+    observer.observe(videoRef.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   return (
     <div className="border rounded-lg p-4 bg-card">
@@ -83,30 +108,25 @@ export function Post({ post, likes, isLiked, commentsCount, onLike }: PostProps)
           <p className="mt-2 text-base whitespace-pre-wrap">{content}</p>
           {post.media_url && (
             isVideoUrl(post.media_url) ? (
-              <div 
-                className={`relative mt-2 ${isExpanded ? '' : 'max-h-[32rem] overflow-hidden'}`}
-                onClick={() => setIsExpanded(!isExpanded)}
-              >
-                <video
-                  src={post.media_url}
-                  className="rounded-lg w-full object-contain cursor-pointer"
-                  controls
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                />
-                {!isExpanded && (
-                  <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/50 to-transparent flex items-center justify-center">
-                    <span className="text-white text-sm">Click to expand</span>
-                  </div>
-                )}
-              </div>
+              <video
+                ref={videoRef}
+                src={post.media_url}
+                className="rounded-lg w-full object-contain mt-2"
+                controls
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                loading="lazy"
+                controlsList="nodownload"
+              />
             ) : (
               <img
                 src={post.media_url}
                 alt="Post media"
                 className="rounded-lg max-h-96 object-cover mt-2"
+                loading="lazy"
+                decoding="async"
               />
             )
           )}

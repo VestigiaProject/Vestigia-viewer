@@ -244,7 +244,6 @@ export function HistoricalPost({
                   loop
                   playsInline
                   preload="metadata"
-                  loading="lazy"
                   controlsList="nodownload"
                   onClick={(e) => e.stopPropagation()}
                 />

@@ -117,7 +117,6 @@ export function Post({ post, likes, isLiked, commentsCount, onLike }: PostProps)
                 loop
                 playsInline
                 preload="metadata"
-                loading="lazy"
                 controlsList="nodownload"
               />
             ) : (

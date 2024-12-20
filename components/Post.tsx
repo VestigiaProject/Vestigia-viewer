@@ -31,6 +31,10 @@ interface PostProps {
   onLike?: () => void;
 }
 
+const isVideoUrl = (url: string) => {
+  return url?.match(/\.(mp4|webm|ogg)(\?.*)?$/i) !== null;
+};
+
 export function Post({ post, likes, isLiked, commentsCount, onLike }: PostProps) {
   const { language } = useLanguage();
   const content = language === 'en' && post.content_en ? post.content_en : post.content;
@@ -76,11 +80,23 @@ export function Post({ post, likes, isLiked, commentsCount, onLike }: PostProps)
           </div>
           <p className="mt-2 text-base whitespace-pre-wrap">{content}</p>
           {post.media_url && (
-            <img
-              src={post.media_url}
-              alt="Post media"
-              className="rounded-lg max-h-96 object-cover mt-2"
-            />
+            isVideoUrl(post.media_url) ? (
+              <video
+                src={post.media_url}
+                className="rounded-lg max-h-96 w-full object-cover mt-2"
+                controls
+                autoPlay
+                muted
+                loop
+                playsInline
+              />
+            ) : (
+              <img
+                src={post.media_url}
+                alt="Post media"
+                className="rounded-lg max-h-96 object-cover mt-2"
+              />
+            )
           )}
           <div className="flex items-center space-x-4 mt-4">
             <Button

@@ -26,6 +26,10 @@ type PostProps = {
   comments: UserInteraction[];
 };
 
+const isVideoUrl = (url: string) => {
+  return url?.match(/\.(mp4|webm|ogg)(\?.*)?$/i) !== null;
+};
+
 export function HistoricalPost({
   post,
   onLike,
@@ -204,11 +208,24 @@ export function HistoricalPost({
             </div>
             <p className="text-sm whitespace-pre-wrap">{content}</p>
             {post.media_url && (
-              <img
-                src={post.media_url}
-                alt="Post media"
-                className="rounded-lg max-h-96 object-cover mt-2"
-              />
+              isVideoUrl(post.media_url) ? (
+                <video
+                  src={post.media_url}
+                  className="rounded-lg max-h-96 w-full object-cover mt-2"
+                  controls
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  onClick={(e) => e.stopPropagation()}
+                />
+              ) : (
+                <img
+                  src={post.media_url}
+                  alt="Post media"
+                  className="rounded-lg max-h-96 object-cover mt-2"
+                />
+              )
             )}
             <div className="flex items-center space-x-4 pt-2">
               <Button

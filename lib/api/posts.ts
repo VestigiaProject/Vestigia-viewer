@@ -157,8 +157,9 @@ export async function fetchPostInteractions(postId: string, userId?: string): Pr
 
   if (commentsError) throw commentsError;
 
-  // Get comment likes
-  const commentsWithLikes = await Promise.all((comments || []).map(async (comment) => {
+  // Get comment likes and replies
+  const commentsWithLikesAndReplies = await Promise.all((comments || []).map(async (comment) => {
+    // Get comment likes
     const { data: commentLikes } = await supabase
       .from('user_interactions')
       .select('id')
@@ -178,6 +179,66 @@ export async function fetchPostInteractions(postId: string, userId?: string): Pr
       commentIsLiked = !!userCommentLike;
     }
 
+    // Get replies
+    const { data: replies } = await supabase
+      .from('user_interactions')
+      .select(`
+        id,
+        user_id,
+        post_id,
+        parent_id,
+        type,
+        content,
+        created_at,
+        user:user_profiles!inner(
+          username,
+          avatar_url
+        )
+      `)
+      .eq('parent_id', comment.id)
+      .eq('type', 'reply')
+      .order('created_at', { ascending: true });
+
+    // Get reply likes
+    const repliesWithLikes = await Promise.all((replies || []).map(async (reply) => {
+      const { data: replyLikes } = await supabase
+        .from('user_interactions')
+        .select('id')
+        .eq('parent_id', reply.id)
+        .eq('type', 'comment_like');
+
+      let replyIsLiked = false;
+      if (userId) {
+        const { data: userReplyLike } = await supabase
+          .from('user_interactions')
+          .select('id')
+          .eq('parent_id', reply.id)
+          .eq('user_id', userId)
+          .eq('type', 'comment_like')
+          .single();
+
+        replyIsLiked = !!userReplyLike;
+      }
+
+      return {
+        id: reply.id,
+        user_id: reply.user_id,
+        post_id: reply.post_id,
+        parent_id: reply.parent_id,
+        type: reply.type as UserInteraction['type'],
+        content: reply.content,
+        created_at: reply.created_at,
+        likes: replyLikes?.length || 0,
+        isLiked: replyIsLiked,
+        username: reply.user?.[0]?.username || 'Deleted User',
+        avatar_url: reply.user?.[0]?.avatar_url || undefined,
+        user_profiles: {
+          username: reply.user?.[0]?.username || null,
+          avatar_url: reply.user?.[0]?.avatar_url || null
+        }
+      };
+    }));
+
     return {
       id: comment.id,
       user_id: comment.user_id,
@@ -193,12 +254,13 @@ export async function fetchPostInteractions(postId: string, userId?: string): Pr
       user_profiles: {
         username: comment.user?.[0]?.username || null,
         avatar_url: comment.user?.[0]?.avatar_url || null
-      }
+      },
+      replies: repliesWithLikes
     };
   }));
 
   // Sort comments by likes count (descending) and then by creation date (ascending) for equal likes
-  const sortedComments = [...commentsWithLikes].sort((a, b) => {
+  const sortedComments = [...commentsWithLikesAndReplies].sort((a, b) => {
     // First sort by likes count (descending)
     if (b.likes !== a.likes) {
       return b.likes - a.likes;

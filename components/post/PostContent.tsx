@@ -21,6 +21,12 @@ type CommentWithUser = UserInteraction & {
     username: string | null;
     avatar_url: string | null;
   };
+  replies?: (UserInteraction & {
+    user_profiles: {
+      username: string | null;
+      avatar_url: string | null;
+    };
+  })[];
 };
 
 export function PostContent({ id }: { id: string }) {
@@ -300,6 +306,105 @@ export function PostContent({ id }: { id: string }) {
     }
   };
 
+  const handleReply = async (commentId: string, content: string) => {
+    if (!user || !content.trim()) return;
+
+    try {
+      const { data: reply, error } = await supabase
+        .from('user_interactions')
+        .insert({
+          user_id: user.id,
+          post_id: id,
+          parent_id: commentId,
+          type: 'reply',
+          content: content.trim(),
+        })
+        .select(`
+          *,
+          user_profiles (
+            username,
+            avatar_url
+          )
+        `)
+        .single();
+
+      if (error) throw error;
+
+      setComments(prev => {
+        return prev.map(comment => {
+          if (comment.id === commentId) {
+            return {
+              ...comment,
+              replies: [...(comment.replies || []), reply as UserInteraction & {
+                user_profiles: {
+                  username: string | null;
+                  avatar_url: string | null;
+                };
+              }],
+            };
+          }
+          return comment;
+        });
+      });
+    } catch (error) {
+      console.error('Error adding reply:', error);
+    }
+  };
+
+  const handleDeleteReply = async (replyId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('user_interactions')
+        .delete()
+        .eq('id', replyId)
+        .eq('user_id', user.id); // Extra safety check
+
+      if (error) throw error;
+
+      setComments(prev => {
+        return prev.map(comment => ({
+          ...comment,
+          replies: (comment.replies || []).filter((reply: UserInteraction) => reply.id !== replyId),
+        }));
+      });
+    } catch (error) {
+      console.error('Error deleting reply:', error);
+    }
+  };
+
+  const handleLikeReply = async (replyId: string) => {
+    if (!user) return;
+
+    try {
+      const { data: existingLike } = await supabase
+        .from('user_interactions')
+        .select('id')
+        .eq('parent_id', replyId)
+        .eq('user_id', user.id)
+        .eq('type', 'comment_like')
+        .single();
+
+      if (existingLike) {
+        await supabase
+          .from('user_interactions')
+          .delete()
+          .eq('id', existingLike.id);
+      } else {
+        await supabase
+          .from('user_interactions')
+          .insert({
+            user_id: user.id,
+            parent_id: replyId,
+            type: 'comment_like',
+          });
+      }
+    } catch (error) {
+      console.error('Error handling reply like:', error);
+    }
+  };
+
   if (error) {
     return (
       <div className="max-w-2xl mx-auto p-4">
@@ -340,6 +445,9 @@ export function PostContent({ id }: { id: string }) {
           onComment={handleComment}
           onDeleteComment={handleDeleteComment}
           onLikeComment={handleLikeComment}
+          onReply={handleReply}
+          onDeleteReply={handleDeleteReply}
+          onLikeReply={handleLikeReply}
         />
       </div>
     </div>

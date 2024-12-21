@@ -21,6 +21,8 @@ type CommentWithUser = UserInteraction & {
     username: string | null;
     avatar_url: string | null;
   };
+  likes_count: number;
+  replies?: CommentWithUser[];
 };
 
 export function PostContent({ id }: { id: string }) {

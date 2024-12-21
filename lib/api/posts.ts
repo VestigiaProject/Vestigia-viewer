@@ -197,9 +197,19 @@ export async function fetchPostInteractions(postId: string, userId?: string): Pr
     };
   }));
 
+  // Sort comments by likes count (descending) and then by creation date (ascending) for equal likes
+  const sortedComments = [...commentsWithLikes].sort((a, b) => {
+    // First sort by likes count (descending)
+    if (b.likes !== a.likes) {
+      return b.likes - a.likes;
+    }
+    // If likes are equal, sort by creation date (ascending)
+    return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+  });
+
   return {
     likes: likes?.length || 0,
-    comments: commentsWithLikes,
+    comments: sortedComments,
     isLiked
   };
 }

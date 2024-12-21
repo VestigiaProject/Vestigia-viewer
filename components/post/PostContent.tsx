@@ -328,7 +328,14 @@ export function PostContent({ id }: { id: string }) {
         `)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error details:', error);
+        throw error;
+      }
+
+      if (!reply) {
+        throw new Error('No reply data returned');
+      }
 
       setComments(prev => {
         return prev.map(comment => {
@@ -348,6 +355,7 @@ export function PostContent({ id }: { id: string }) {
       });
     } catch (error) {
       console.error('Error adding reply:', error);
+      throw error; // Re-throw to let the UI handle the error
     }
   };
 

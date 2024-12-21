@@ -222,7 +222,39 @@ export function PostContent({ id }: { id: string }) {
     }
   };
 
-  const handleComment = async (content: string) => {
+  const fetchComments = async () => {
+    try {
+      const { data: commentsData, error: commentsError } = await supabase
+        .from('user_interactions')
+        .select(`
+          *,
+          user_profiles (
+            username,
+            avatar_url
+          ),
+          likes_count,
+          replies:user_interactions(
+            *,
+            user_profiles (
+              username,
+              avatar_url
+            ),
+            likes_count
+          )
+        `)
+        .eq('post_id', id)
+        .eq('type', 'comment')
+        .is('parent_comment_id', null)
+        .order('likes_count', { ascending: false });
+
+      if (commentsError) throw commentsError;
+      setComments(commentsData || []);
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+    }
+  };
+
+  const handleComment = async (content: string, parentCommentId?: string) => {
     if (!user || !content.trim()) return;
 
     try {
@@ -233,19 +265,35 @@ export function PostContent({ id }: { id: string }) {
           post_id: id,
           type: 'comment',
           content: content.trim(),
+          parent_comment_id: parentCommentId || null,
         })
         .select(`
           *,
           user_profiles (
             username,
             avatar_url
-          )
+          ),
+          likes_count
         `)
         .single();
 
       if (error) throw error;
 
-      setComments(prev => [...prev, comment as CommentWithUser]);
+      if (parentCommentId) {
+        // If this is a reply, update the parent comment's replies
+        setComments(prev => prev.map(c => {
+          if (c.id === parentCommentId) {
+            return {
+              ...c,
+              replies: [...(c.replies || []), comment],
+            };
+          }
+          return c;
+        }));
+      } else {
+        // If this is a top-level comment
+        setComments(prev => [...prev, { ...comment, replies: [] }]);
+      }
     } catch (error) {
       console.error('Error adding comment:', error);
     }

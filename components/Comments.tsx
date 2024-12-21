@@ -203,11 +203,9 @@ export function Comments({ comments, onComment, onDeleteComment, onLikeComment, 
       setReplyingTo(null);
     } catch (error) {
       console.error('Error submitting reply:', error);
-      // Keep the reply form open and content intact on error
+    } finally {
       setIsSubmitting(false);
-      return;
     }
-    setIsSubmitting(false);
   };
 
   return (

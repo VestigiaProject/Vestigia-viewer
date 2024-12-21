@@ -46,7 +46,7 @@ export type UserInteraction = {
   user_id: string;
   post_id: string | null;
   parent_id: string | null;
-  type: 'like' | 'comment' | 'comment_like' | 'reply';
+  type: 'like' | 'comment' | 'comment_like';
   content: string | null;
   created_at: string;
   username?: string;

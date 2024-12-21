@@ -269,6 +269,37 @@ export function PostContent({ id }: { id: string }) {
     }
   };
 
+  const handleLikeComment = async (commentId: string) => {
+    if (!user) return;
+
+    try {
+      const { data: existingLike } = await supabase
+        .from('user_interactions')
+        .select('id')
+        .eq('parent_id', commentId)
+        .eq('user_id', user.id)
+        .eq('type', 'comment_like')
+        .single();
+
+      if (existingLike) {
+        await supabase
+          .from('user_interactions')
+          .delete()
+          .eq('id', existingLike.id);
+      } else {
+        await supabase
+          .from('user_interactions')
+          .insert({
+            user_id: user.id,
+            parent_id: commentId,
+            type: 'comment_like',
+          });
+      }
+    } catch (error) {
+      console.error('Error handling comment like:', error);
+    }
+  };
+
   if (error) {
     return (
       <div className="max-w-2xl mx-auto p-4">
@@ -308,6 +339,7 @@ export function PostContent({ id }: { id: string }) {
           comments={comments} 
           onComment={handleComment}
           onDeleteComment={handleDeleteComment}
+          onLikeComment={handleLikeComment}
         />
       </div>
     </div>

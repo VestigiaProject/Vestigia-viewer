@@ -107,6 +107,11 @@ interface PostInteractions {
   isLiked?: boolean;
 }
 
+interface CommentWithLikes extends UserInteraction {
+  likes: number;
+  isLiked: boolean;
+}
+
 export async function fetchPostInteractions(postId: string, userId?: string): Promise<PostInteractions> {
   // Get likes count
   const { data: likes, error: likesError } = await supabase
@@ -131,7 +136,7 @@ export async function fetchPostInteractions(postId: string, userId?: string): Pr
     isLiked = !!likeData;
   }
 
-  // Get comments with user info
+  // Get comments with user info and likes
   const { data: comments, error: commentsError } = await supabase
     .from('user_interactions')
     .select(`
@@ -152,20 +157,49 @@ export async function fetchPostInteractions(postId: string, userId?: string): Pr
 
   if (commentsError) throw commentsError;
 
-  const mappedComments = (comments || []).map(comment => ({
-    id: comment.id,
-    user_id: comment.user_id,
-    post_id: comment.post_id,
-    type: 'comment' as const,
-    content: comment.content || '',
-    created_at: comment.created_at,
-    username: comment.user?.[0]?.username || 'Deleted User',
-    avatar_url: comment.user?.[0]?.avatar_url || undefined
+  // Get comment likes
+  const commentsWithLikes = await Promise.all((comments || []).map(async (comment) => {
+    const { data: commentLikes } = await supabase
+      .from('user_interactions')
+      .select('id')
+      .eq('parent_id', comment.id)
+      .eq('type', 'comment_like');
+
+    let commentIsLiked = false;
+    if (userId) {
+      const { data: userCommentLike } = await supabase
+        .from('user_interactions')
+        .select('id')
+        .eq('parent_id', comment.id)
+        .eq('user_id', userId)
+        .eq('type', 'comment_like')
+        .single();
+
+      commentIsLiked = !!userCommentLike;
+    }
+
+    return {
+      id: comment.id,
+      user_id: comment.user_id,
+      post_id: comment.post_id,
+      parent_id: null,
+      type: comment.type as UserInteraction['type'],
+      content: comment.content,
+      created_at: comment.created_at,
+      likes: commentLikes?.length || 0,
+      isLiked: commentIsLiked,
+      username: comment.user?.[0]?.username || 'Deleted User',
+      avatar_url: comment.user?.[0]?.avatar_url || undefined,
+      user_profiles: {
+        username: comment.user?.[0]?.username || null,
+        avatar_url: comment.user?.[0]?.avatar_url || null
+      }
+    };
   }));
 
   return {
     likes: likes?.length || 0,
-    comments: mappedComments,
+    comments: commentsWithLikes,
     isLiked
   };
 }

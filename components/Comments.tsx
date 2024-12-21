@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -9,9 +9,15 @@ import type { UserInteraction } from '@/lib/supabase';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
 import { fr } from 'date-fns/locale';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Heart } from 'lucide-react';
 import { useUserProfile } from '@/lib/hooks/useUserProfile';
 import { useTranslation } from '@/lib/hooks/useTranslation';
+import { supabase } from '@/lib/supabase';
+
+interface CommentLikes {
+  count: number;
+  isLiked: boolean;
+}
 
 interface CommentsProps {
   postId: string;
@@ -20,18 +26,86 @@ interface CommentsProps {
       username: string | null;
       avatar_url: string | null;
     };
+    likes?: CommentLikes;
   })[];
   onComment: (content: string) => Promise<void>;
   onDeleteComment?: (commentId: string) => Promise<void>;
+  onLikeComment?: (commentId: string) => Promise<void>;
 }
 
-export function Comments({ comments, onComment, onDeleteComment }: CommentsProps) {
+export function Comments({ comments, onComment, onDeleteComment, onLikeComment }: CommentsProps) {
   const { user } = useAuth();
   const { profile } = useUserProfile();
   const { language } = useLanguage();
   const { t } = useTranslation();
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [commentLikes, setCommentLikes] = useState<Record<string, CommentLikes>>({});
+
+  useEffect(() => {
+    const fetchCommentLikes = async () => {
+      if (!comments.length) return;
+
+      const likes = await Promise.all(
+        comments.map(async (comment) => {
+          const { data: likesData } = await supabase
+            .from('user_interactions')
+            .select('id')
+            .eq('parent_id', comment.id)
+            .eq('type', 'comment_like');
+
+          const { data: userLike } = user ? await supabase
+            .from('user_interactions')
+            .select('id')
+            .eq('parent_id', comment.id)
+            .eq('user_id', user.id)
+            .eq('type', 'comment_like')
+            .single() : { data: null };
+
+          return {
+            commentId: comment.id,
+            count: likesData?.length || 0,
+            isLiked: !!userLike
+          };
+        })
+      );
+
+      const likesMap = likes.reduce((acc, { commentId, count, isLiked }) => ({
+        ...acc,
+        [commentId]: { count, isLiked }
+      }), {});
+
+      setCommentLikes(likesMap);
+    };
+
+    fetchCommentLikes();
+  }, [comments, user]);
+
+  const handleLikeComment = async (commentId: string) => {
+    if (!user || !onLikeComment) return;
+
+    const currentLikes = commentLikes[commentId] || { count: 0, isLiked: false };
+    
+    // Optimistic update
+    setCommentLikes(prev => ({
+      ...prev,
+      [commentId]: {
+        count: currentLikes.isLiked ? currentLikes.count - 1 : currentLikes.count + 1,
+        isLiked: !currentLikes.isLiked
+      }
+    }));
+
+    try {
+      await onLikeComment(commentId);
+    } catch (error) {
+      // Revert on error
+      setCommentLikes(prev => ({
+        ...prev,
+        [commentId]: currentLikes
+      }));
+      console.error('Error liking comment:', error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,6 +197,18 @@ export function Comments({ comments, onComment, onDeleteComment }: CommentsProps
                     </div>
                   </div>
                   <p className="whitespace-pre-wrap">{comment.content}</p>
+                  <div className="mt-2 flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={`space-x-1 ${commentLikes[comment.id]?.isLiked ? 'text-red-500' : ''}`}
+                      onClick={() => handleLikeComment(comment.id)}
+                      disabled={!user}
+                    >
+                      <Heart className={`h-4 w-4 ${commentLikes[comment.id]?.isLiked ? 'fill-current' : ''}`} />
+                      <span>{commentLikes[comment.id]?.count || 0}</span>
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>

@@ -5,7 +5,7 @@ import { useTimeProgress } from '@/lib/hooks/useTimeProgress';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { fetchPosts, fetchPostInteractions } from '@/lib/api/posts';
 import { supabase } from '@/lib/supabase';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { HistoricalPostWithFigure, UserInteraction } from '@/lib/supabase';
@@ -22,22 +22,36 @@ export default function TimelinePage() {
   const [userLikes, setUserLikes] = useState<Set<string>>(new Set());
   const [postInteractions, setPostInteractions] = useState<Record<string, { likes: number; comments: UserInteraction[] }>>({});
 
-  useEffect(() => {
-    loadPosts();
-    loadUserLikes();
-  }, []);
-
-  async function loadPosts() {
+  const loadPosts = useCallback(async (pageToLoad: number) => {
     try {
-      const newPosts = await fetchPosts(currentDate, page);
-      setPosts((prev) => [...prev, ...newPosts]);
+      const newPosts = await fetchPosts(currentDate, pageToLoad);
+      
+      // Create a Set of existing post IDs for efficient lookup
+      const existingPostIds = new Set(posts.map(post => post.id));
+      
+      // Filter out any duplicate posts
+      const uniqueNewPosts = newPosts.filter(post => !existingPostIds.has(post.id));
+      
+      if (uniqueNewPosts.length === 0) {
+        setHasMore(false);
+        return;
+      }
+
+      // Sort all posts by original_date in descending order
+      setPosts(prev => {
+        const allPosts = [...prev, ...uniqueNewPosts];
+        return allPosts.sort((a, b) => 
+          new Date(b.original_date).getTime() - new Date(a.original_date).getTime()
+        );
+      });
+      
       setHasMore(newPosts.length === 10);
       
       // Load interactions for new posts
       const interactions = await Promise.all(
-        newPosts.map((post) => fetchPostInteractions(post.id))
+        uniqueNewPosts.map((post) => fetchPostInteractions(post.id))
       );
-      const newInteractions = newPosts.reduce((acc, post, index) => {
+      const newInteractions = uniqueNewPosts.reduce((acc, post, index) => {
         acc[post.id] = interactions[index];
         return acc;
       }, {} as Record<string, { likes: number; comments: UserInteraction[] }>);
@@ -48,7 +62,12 @@ export default function TimelinePage() {
       console.error('Error loading posts:', error);
       setLoading(false);
     }
-  }
+  }, [currentDate, posts]);
+
+  useEffect(() => {
+    loadPosts(1);
+    loadUserLikes();
+  }, []);
 
   async function loadUserLikes() {
     if (!user) return;
@@ -132,8 +151,9 @@ export default function TimelinePage() {
         <InfiniteScroll
           dataLength={posts.length}
           next={() => {
-            setPage((prev) => prev + 1);
-            loadPosts();
+            const nextPage = page + 1;
+            setPage(nextPage);
+            loadPosts(nextPage);
           }}
           hasMore={hasMore}
           loader={<div className="bg-white/95 rounded-lg shadow-sm my-4"><Skeleton className="h-48 w-full" /></div>}

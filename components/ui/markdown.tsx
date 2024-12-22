@@ -15,6 +15,7 @@ export function Markdown({ content, className }: MarkdownProps) {
       remarkPlugins={[remarkGfm]}
       className={cn(
         'prose prose-sm dark:prose-invert max-w-none',
+        'prose-p:my-1.5 prose-p:leading-normal',
         'prose-a:text-primary hover:prose-a:underline',
         'prose-code:bg-muted prose-code:rounded prose-code:px-1',
         'prose-pre:bg-muted prose-pre:rounded-lg',

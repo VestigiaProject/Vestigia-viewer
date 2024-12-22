@@ -8,6 +8,7 @@ import { Check, Heart, MessageCircle } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { fr } from 'date-fns/locale';
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
 interface PostProps {
   post: {
@@ -39,6 +40,7 @@ const isVideoUrl = (url: string) => {
 export function Post({ post, likes, isLiked, commentsCount, onLike }: PostProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const { language } = useLanguage();
+  const { t } = useTranslation();
   const content = language === 'en' && post.content_en ? post.content_en : post.content;
   const title = language === 'en' && post.historical_figures.title_en 
     ? post.historical_figures.title_en 
@@ -145,7 +147,7 @@ export function Post({ post, likes, isLiked, commentsCount, onLike }: PostProps)
               className="space-x-1"
             >
               <MessageCircle className="h-4 w-4" />
-              <span>Comments ({commentsCount})</span>
+              <span>{t('comments.title')} ({commentsCount})</span>
             </Button>
           </div>
         </div>

@@ -14,6 +14,7 @@ import { format } from 'date-fns';
 import { useState } from 'react';
 import type { UserInteraction } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
 type CommentDialogProps = {
   open: boolean;
@@ -33,6 +34,7 @@ export function CommentDialog({
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const handleSubmit = async () => {
     if (!content.trim() || loading) return;
@@ -68,7 +70,7 @@ export function CommentDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Comments</DialogTitle>
+          <DialogTitle>{t('comments.title')}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col space-y-4">
           <ScrollArea className="h-[300px] pr-4">

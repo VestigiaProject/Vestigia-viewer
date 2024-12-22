@@ -204,8 +204,8 @@ export function HistoricalPost({
   return (
     <div onClick={handlePostClick}>
       <Card className="p-4 sm:p-4 bg-white hover:bg-gray-50 transition-colors cursor-pointer shadow-sm">
-        <div className="flex gap-4">
-          <div className="shrink-0 -ml-[44px] sm:ml-0">
+        <div className="flex gap-4 -ml-[44px] sm:ml-0">
+          <div className="shrink-0">
             <Link href={`/profile/${post.figure.id}`} onClick={(e) => e.stopPropagation()}>
               <Avatar>
                 <AvatarImage src={post.figure.profile_image} />

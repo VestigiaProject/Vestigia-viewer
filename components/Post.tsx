@@ -76,8 +76,8 @@ export function Post({ post, likes, isLiked, commentsCount, onLike }: PostProps)
   return (
     <div className="bg-card rounded-lg border">
       <div className="px-4 sm:px-6 py-4">
-        <div className="flex gap-4">
-          <div className="shrink-0 -ml-[52px] sm:ml-0">
+        <div className="flex gap-4 -ml-[52px] sm:ml-0">
+          <div className="shrink-0">
             <Link href={`/profile/${post.historical_figures.id}`}>
               <Avatar className="h-12 w-12">
                 <AvatarImage src={post.historical_figures.profile_image} />

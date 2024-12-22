@@ -17,6 +17,7 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { fetchPostInteractions } from '@/lib/api/posts';
 import { Markdown } from '@/components/ui/markdown';
+import { cn } from '@/lib/utils';
 
 type PostProps = {
   post: HistoricalPostWithFigure;
@@ -203,88 +204,93 @@ export function HistoricalPost({
   return (
     <div onClick={handlePostClick}>
       <Card className="p-4 bg-white hover:bg-gray-50 transition-colors cursor-pointer shadow-sm">
-        <div className="flex space-x-4">
-          <Link href={`/profile/${post.figure.id}`} onClick={(e) => e.stopPropagation()}>
-            <Avatar>
-              <AvatarImage src={post.figure.profile_image} />
-              <AvatarFallback>{post.figure.name[0]}</AvatarFallback>
-            </Avatar>
-          </Link>
-          <div className="flex-1 space-y-2">
-            <div className="flex items-start justify-between">
-              <div className="space-y-1">
-                <div className="flex items-center gap-1">
-                  <Link
-                    href={`/profile/${post.figure.id}`}
-                    className="font-semibold hover:underline"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {post.figure.name}
-                  </Link>
-                  {post.figure.checkmark && (
-                    <Check className="h-4 w-4 text-blue-500" />
-                  )}
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {title}
-                </p>
+        <div className="flex gap-4">
+          <div className="shrink-0">
+            <Link href={`/profile/${post.figure.id}`} onClick={(e) => e.stopPropagation()}>
+              <Avatar>
+                <AvatarImage src={post.figure.profile_image} />
+                <AvatarFallback>{post.figure.name[0]}</AvatarFallback>
+              </Avatar>
+            </Link>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Link
+                  href={`/profile/${post.figure.id}`}
+                  className="font-semibold hover:underline"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {post.figure.name}
+                </Link>
+                {post.figure.checkmark && (
+                  <Check className="h-4 w-4 shrink-0 text-blue-500" />
+                )}
               </div>
-              <span className="text-sm text-muted-foreground shrink-0 ml-4">
+              <span className="text-sm text-muted-foreground shrink-0">
                 {format(new Date(post.original_date), language === 'fr' ? 'd MMM yyyy' : 'MMM d, yyyy', { locale: language === 'fr' ? fr : undefined })}
               </span>
             </div>
-            <div className="text-sm">
-              <Markdown content={content} />
+            <p className="text-sm text-muted-foreground mb-2">
+              {title}
+            </p>
+            <div className="text-[15px] break-words -ml-[44px] sm:ml-0">
+              <Markdown content={content} className="prose-p:my-1 prose-p:leading-relaxed" />
+              {post.media_url && (
+                <div className="mt-3 rounded-lg overflow-hidden">
+                  {isVideoUrl(post.media_url) ? (
+                    <video
+                      ref={videoRef}
+                      src={post.media_url}
+                      className="w-full object-contain"
+                      controls
+                      muted
+                      loop
+                      playsInline
+                      preload="metadata"
+                      controlsList="nodownload"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  ) : (
+                    <img
+                      src={post.media_url}
+                      alt="Post media"
+                      className="w-full max-h-[512px] object-cover"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  )}
+                </div>
+              )}
             </div>
-            {post.media_url && (
-              isVideoUrl(post.media_url) ? (
-                <video
-                  ref={videoRef}
-                  src={post.media_url}
-                  className="rounded-lg w-full object-contain mt-2"
-                  controls
-                  muted
-                  loop
-                  playsInline
-                  preload="metadata"
-                  controlsList="nodownload"
-                  onClick={(e) => e.stopPropagation()}
-                />
-              ) : (
-                <img
-                  src={post.media_url}
-                  alt="Post media"
-                  className="rounded-lg max-h-96 object-cover mt-2"
-                  loading="lazy"
-                  decoding="async"
-                />
-              )
-            )}
-            <div className="flex items-center space-x-4 pt-2">
+            <div className="flex items-center space-x-4 pt-3">
               <Button
                 variant="ghost"
                 size="sm"
-                className={`space-x-1 ${liked ? 'text-red-500' : ''}`}
+                className={cn(
+                  "h-8 px-3 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20",
+                  liked && "text-red-500"
+                )}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleLike();
                 }}
                 disabled={loading}
               >
-                <Heart className={`h-4 w-4 ${liked ? 'fill-current' : ''}`} />
-                <span>{likeCount}</span>
+                <Heart className={cn("h-4 w-4 mr-2", liked && "fill-current")} />
+                <span className="text-sm font-medium">{likeCount}</span>
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
-                className="space-x-1"
+                className="h-8 px-3 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/20"
                 onClick={(e) => {
                   e.stopPropagation();
                   router.push(`/post/${post.id}#comments`);
                 }}
               >
-                <MessageCircle className="h-4 w-4" />
-                <span>{t('post.comments')} ({comments.length})</span>
+                <MessageCircle className="h-4 w-4 mr-2" />
+                <span className="text-sm font-medium">{t('post.comments')} ({comments.length})</span>
               </Button>
             </div>
           </div>

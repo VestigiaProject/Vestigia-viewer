@@ -77,12 +77,14 @@ export function Post({ post, likes, isLiked, commentsCount, onLike }: PostProps)
     <div className="bg-card rounded-lg border">
       <div className="px-6 py-4">
         <div className="flex gap-4">
-          <Link href={`/profile/${post.historical_figures.id}`}>
-            <Avatar className="h-12 w-12">
-              <AvatarImage src={post.historical_figures.profile_image} />
-              <AvatarFallback>{post.historical_figures.name[0]}</AvatarFallback>
-            </Avatar>
-          </Link>
+          <div className="shrink-0">
+            <Link href={`/profile/${post.historical_figures.id}`}>
+              <Avatar className="h-12 w-12">
+                <AvatarImage src={post.historical_figures.profile_image} />
+                <AvatarFallback>{post.historical_figures.name[0]}</AvatarFallback>
+              </Avatar>
+            </Link>
+          </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2 mb-2">
               <div className="flex items-center gap-2 flex-wrap">
@@ -108,34 +110,34 @@ export function Post({ post, likes, isLiked, commentsCount, onLike }: PostProps)
                 {title}
               </p>
             )}
-            <div className="text-[15px] break-words">
+            <div className="text-[15px] break-words -ml-[52px] sm:ml-0">
               <Markdown content={content} className="prose-p:my-1 prose-p:leading-relaxed" />
+              {post.media_url && (
+                <div className="mt-3 rounded-lg overflow-hidden">
+                  {isVideoUrl(post.media_url) ? (
+                    <video
+                      ref={videoRef}
+                      src={post.media_url}
+                      className="w-full object-contain"
+                      controls
+                      muted
+                      loop
+                      playsInline
+                      preload="metadata"
+                      controlsList="nodownload"
+                    />
+                  ) : (
+                    <img
+                      src={post.media_url}
+                      alt="Post media"
+                      className="w-full max-h-[512px] object-cover"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  )}
+                </div>
+              )}
             </div>
-            {post.media_url && (
-              <div className="mt-3 rounded-lg overflow-hidden">
-                {isVideoUrl(post.media_url) ? (
-                  <video
-                    ref={videoRef}
-                    src={post.media_url}
-                    className="w-full object-contain"
-                    controls
-                    muted
-                    loop
-                    playsInline
-                    preload="metadata"
-                    controlsList="nodownload"
-                  />
-                ) : (
-                  <img
-                    src={post.media_url}
-                    alt="Post media"
-                    className="w-full max-h-[512px] object-cover"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                )}
-              </div>
-            )}
           </div>
         </div>
       </div>

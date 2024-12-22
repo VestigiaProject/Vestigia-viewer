@@ -16,6 +16,7 @@ import { fr } from 'date-fns/locale';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { fetchPostInteractions } from '@/lib/api/posts';
+import { Markdown } from '@/components/ui/markdown';
 
 type PostProps = {
   post: HistoricalPostWithFigure;
@@ -232,7 +233,9 @@ export function HistoricalPost({
                 {format(new Date(post.original_date), language === 'fr' ? 'd MMM yyyy' : 'MMM d, yyyy', { locale: language === 'fr' ? fr : undefined })}
               </span>
             </div>
-            <p className="text-sm whitespace-pre-wrap">{content}</p>
+            <div className="text-sm">
+              <Markdown content={content} />
+            </div>
             {post.media_url && (
               isVideoUrl(post.media_url) ? (
                 <video

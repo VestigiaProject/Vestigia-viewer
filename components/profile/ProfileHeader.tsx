@@ -7,6 +7,7 @@ import type { HistoricalFigure } from '@/lib/supabase';
 import { useLanguage } from '@/lib/hooks/useLanguage';
 import { useTranslation } from '@/lib/hooks/useTranslation';
 import { Check } from 'lucide-react';
+import { Markdown } from '@/components/ui/markdown';
 
 type ProfileHeaderProps = {
   figure: HistoricalFigure;
@@ -41,7 +42,7 @@ export function ProfileHeader({ figure, postCount }: ProfileHeaderProps) {
               <p className="text-muted-foreground font-medium">{title}</p>
             </div>
             <div className="prose prose-sm max-w-none text-gray-600">
-              <p className="whitespace-pre-wrap leading-relaxed">{biography}</p>
+              <Markdown content={biography || ''} />
             </div>
             <div className="flex gap-4 text-sm text-muted-foreground border-t pt-4">
               <span className="font-medium">{postCount} {t('timeline.posts')}</span>

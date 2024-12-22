@@ -1,77 +1,20 @@
-'use client';
-
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { formatDistanceToNow } from 'date-fns';
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
+import { Button } from './ui/button';
 import { Check, Heart, MessageCircle } from 'lucide-react';
-import { useLanguage } from '@/hooks/useLanguage';
+import { useLanguage } from '../hooks/useLanguage';
+import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { useState, useRef, useEffect } from 'react';
-import { useTranslation } from '@/lib/hooks/useTranslation';
-import { Markdown } from '@/components/ui/markdown';
-import { cn } from '@/lib/utils';
+import { cn } from '../lib/utils';
+import { Markdown } from './Markdown';
 
-interface PostProps {
-  post: {
-    id: string;
-    content: string;
-    content_en?: string;
-    created_at: string;
-    original_date: string;
-    media_url?: string;
-    historical_figures: {
-      id: string;
-      name: string;
-      profile_image?: string;
-      title?: string;
-      title_en?: string;
-      checkmark?: boolean;
-    };
-  };
-  likes: number;
-  isLiked: boolean;
-  commentsCount: number;
-  onLike?: () => void;
-}
-
-const isVideoUrl = (url: string) => {
-  return url?.match(/\.(mp4|webm|ogg)(\?.*)?$/i) !== null;
-};
-
-export function Post({ post, likes, isLiked, commentsCount, onLike }: PostProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
+export function HistoricalPost({ post, likes, isLiked, commentsCount, onLike }: HistoricalPostProps) {
   const { language } = useLanguage();
-  const { t } = useTranslation();
   const content = language === 'en' && post.content_en ? post.content_en : post.content;
   const title = language === 'en' && post.historical_figures.title_en 
     ? post.historical_figures.title_en 
     : post.historical_figures.title;
-
-  useEffect(() => {
-    if (!videoRef.current) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            videoRef.current?.play().catch(() => {
-              // Autoplay was prevented
-            });
-          } else {
-            videoRef.current?.pause();
-          }
-        });
-      },
-      { threshold: 0.2 }
-    );
-
-    observer.observe(videoRef.current);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
 
   return (
     <div className="border rounded-lg p-6 bg-card">
@@ -110,27 +53,13 @@ export function Post({ post, likes, isLiked, commentsCount, onLike }: PostProps)
           </div>
           {post.media_url && (
             <div className="mt-2 rounded-lg overflow-hidden">
-              {isVideoUrl(post.media_url) ? (
-                <video
-                  ref={videoRef}
-                  src={post.media_url}
-                  className="w-full object-contain"
-                  controls
-                  muted
-                  loop
-                  playsInline
-                  preload="metadata"
-                  controlsList="nodownload"
-                />
-              ) : (
-                <img
-                  src={post.media_url}
-                  alt="Post media"
-                  className="w-full max-h-[512px] object-cover"
-                  loading="lazy"
-                  decoding="async"
-                />
-              )}
+              <img
+                src={post.media_url}
+                alt="Post media"
+                className="w-full max-h-[512px] object-cover"
+                loading="lazy"
+                decoding="async"
+              />
             </div>
           )}
           <div className="flex items-center gap-4 mt-3">

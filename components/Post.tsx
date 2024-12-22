@@ -87,7 +87,7 @@ export function Post({ post, likes, isLiked, commentsCount, onLike }: PostProps)
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-2">
                 <Link
                   href={`/profile/${post.historical_figures.id}`}
                   className="font-semibold hover:underline"
@@ -104,7 +104,7 @@ export function Post({ post, likes, isLiked, commentsCount, onLike }: PostProps)
                 {title}
               </p>
             )}
-            <div className="text-[15px] break-words -ml-[52px] sm:ml-0">
+            <div className="text-[15px] break-words mt-4">
               <Markdown content={content} className="prose-p:my-1 prose-p:leading-relaxed" />
               {post.media_url && (
                 <div className="mt-3 rounded-lg overflow-hidden">

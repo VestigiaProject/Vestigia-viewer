@@ -215,7 +215,7 @@ export function HistoricalPost({
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-2">
                 <Link
                   href={`/profile/${post.figure.id}`}
                   className="font-semibold hover:underline"
@@ -227,14 +227,14 @@ export function HistoricalPost({
                   <Check className="h-4 w-4 shrink-0 text-blue-500" />
                 )}
               </div>
-              <span className="text-sm text-muted-foreground shrink-0">
+              <span className="text-sm text-muted-foreground shrink-0 ml-auto">
                 {format(new Date(post.original_date), language === 'fr' ? 'd MMM yyyy' : 'MMM d, yyyy', { locale: language === 'fr' ? fr : undefined })}
               </span>
             </div>
             <p className="text-sm text-muted-foreground mt-0.5">
               {title}
             </p>
-            <div className="text-[15px] break-words -ml-[44px] sm:ml-0">
+            <div className="text-[15px] break-words mt-4">
               <Markdown content={content} className="prose-p:my-1 prose-p:leading-relaxed" />
               {post.media_url && (
                 <div className="mt-3 rounded-lg overflow-hidden">

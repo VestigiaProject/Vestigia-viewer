@@ -322,11 +322,13 @@ export function PostContent({ id }: { id: string }) {
         onLike={handleLike}
       />
       
-      <Accordion type="single" collapsible>
-        <AccordionItem value="source">
-          <AccordionTrigger>{t('post.source')}</AccordionTrigger>
+      <Accordion type="single" collapsible className="bg-card rounded-lg border">
+        <AccordionItem value="source" className="border-none">
+          <AccordionTrigger className="px-4 hover:no-underline hover:bg-accent">
+            {t('post.source')}
+          </AccordionTrigger>
           <AccordionContent>
-            <div className="whitespace-pre-wrap p-4 bg-muted rounded-md">
+            <div className="whitespace-pre-wrap p-4 bg-muted/50 mx-4 rounded-md">
               {sourceContent}
             </div>
           </AccordionContent>

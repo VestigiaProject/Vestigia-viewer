@@ -10,7 +10,7 @@ import InfiniteScroll from 'react-infinite-scroll-component';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { HistoricalPostWithFigure, UserInteraction } from '@/lib/supabase';
 
-const START_DATE = '1789-06-01';
+const START_DATE = '1789-06-04';
 
 export default function TimelinePage() {
   const { user } = useAuth();

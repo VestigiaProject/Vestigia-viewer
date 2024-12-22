@@ -23,7 +23,7 @@ type TimePeriodOption = {
 
 const timePeriods: TimePeriodOption[] = [
   {
-    date: '1789-06-01',
+    date: '1789-06-04',
     labelKey: 'time.period.estates_general',
     descriptionKey: 'time.period.estates_general_desc',
     enabled: true,

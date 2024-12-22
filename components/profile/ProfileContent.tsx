@@ -12,7 +12,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/lib/hooks/useTranslation';
 
-const START_DATE = '1789-06-01';
+const START_DATE = '1789-06-04';
 
 export function ProfileContent({ id }: { id: string }) {
   const router = useRouter();

@@ -13,6 +13,7 @@ import { Trash2, Heart } from 'lucide-react';
 import { useUserProfile } from '@/lib/hooks/useUserProfile';
 import { useTranslation } from '@/lib/hooks/useTranslation';
 import { supabase } from '@/lib/supabase';
+import { Markdown } from '@/components/ui/markdown';
 
 interface CommentLikes {
   count: number;
@@ -196,7 +197,9 @@ export function Comments({ comments, onComment, onDeleteComment, onLikeComment }
                       )}
                     </div>
                   </div>
-                  <p className="whitespace-pre-wrap">{comment.content}</p>
+                  <div className="text-sm">
+                    <Markdown content={comment.content} />
+                  </div>
                   <div className="mt-2 flex items-center gap-2">
                     <Button
                       variant="ghost"

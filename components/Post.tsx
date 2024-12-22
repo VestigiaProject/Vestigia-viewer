@@ -9,6 +9,7 @@ import { useLanguage } from '@/hooks/useLanguage';
 import { fr } from 'date-fns/locale';
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from '@/lib/hooks/useTranslation';
+import { Markdown } from '@/components/ui/markdown';
 
 interface PostProps {
   post: {
@@ -107,7 +108,9 @@ export function Post({ post, likes, isLiked, commentsCount, onLike }: PostProps)
               })}
             </span>
           </div>
-          <p className="mt-2 text-base whitespace-pre-wrap">{content}</p>
+          <div className="mt-2 text-base">
+            <Markdown content={content} />
+          </div>
           {post.media_url && (
             isVideoUrl(post.media_url) ? (
               <video

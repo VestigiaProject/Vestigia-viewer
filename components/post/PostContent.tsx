@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
 import type { UserInteraction } from '@/lib/supabase';
 import { useTranslation } from '@/lib/hooks/useTranslation';
+import { Markdown } from '@/components/ui/markdown';
 
 type CommentWithUser = UserInteraction & {
   user_profiles: {
@@ -329,8 +330,8 @@ export function PostContent({ id }: { id: string }) {
               {t('post.source')}
             </AccordionTrigger>
             <AccordionContent>
-              <div className="whitespace-pre-wrap p-4 text-sm">
-                {sourceContent}
+              <div className="p-4 text-sm">
+                <Markdown content={sourceContent} />
               </div>
             </AccordionContent>
           </AccordionItem>

@@ -105,7 +105,7 @@ export function Post({ post, likes, isLiked, commentsCount, onLike }: PostProps)
               </p>
             )}
             <div className="text-[15px] break-words mt-4">
-              <Markdown content={content} className="prose-p:my-1 prose-p:leading-relaxed" />
+              <Markdown content={content} className="prose-p:my-1 prose-p:leading-relaxed font-essays" />
               {post.media_url && (
                 <div className="mt-3 rounded-lg overflow-hidden">
                   {isVideoUrl(post.media_url) ? (

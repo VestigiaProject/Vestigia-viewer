@@ -22,12 +22,12 @@ export default function TimelinePage() {
   const [userLikes, setUserLikes] = useState<Set<string>>(new Set());
   const [postInteractions, setPostInteractions] = useState<Record<string, { likes: number; comments: UserInteraction[] }>>({});
 
-  const loadPosts = useCallback(async (pageToLoad: number) => {
+  const loadPosts = useCallback(async (pageToLoad: number, resetPosts: boolean = false) => {
     try {
       const newPosts = await fetchPosts(currentDate, pageToLoad);
       
       // Create a Set of existing post IDs for efficient lookup
-      const existingPostIds = new Set(posts.map(post => post.id));
+      const existingPostIds = new Set(resetPosts ? [] : posts.map(post => post.id));
       
       // Filter out any duplicate posts
       const uniqueNewPosts = newPosts.filter(post => !existingPostIds.has(post.id));
@@ -39,7 +39,7 @@ export default function TimelinePage() {
 
       // Sort all posts by original_date in descending order
       setPosts(prev => {
-        const allPosts = [...prev, ...uniqueNewPosts];
+        const allPosts = resetPosts ? uniqueNewPosts : [...prev, ...uniqueNewPosts];
         return allPosts.sort((a, b) => 
           new Date(b.original_date).getTime() - new Date(a.original_date).getTime()
         );
@@ -56,7 +56,7 @@ export default function TimelinePage() {
         return acc;
       }, {} as Record<string, { likes: number; comments: UserInteraction[] }>);
       
-      setPostInteractions((prev) => ({ ...prev, ...newInteractions }));
+      setPostInteractions(prev => resetPosts ? newInteractions : { ...prev, ...newInteractions });
       setLoading(false);
     } catch (error) {
       console.error('Error loading posts:', error);
@@ -64,10 +64,18 @@ export default function TimelinePage() {
     }
   }, [currentDate, posts]);
 
+  // Initial load
   useEffect(() => {
-    loadPosts(1);
     loadUserLikes();
   }, []);
+
+  // Reload posts when current date changes
+  useEffect(() => {
+    setPage(1);
+    setHasMore(true);
+    setLoading(true);
+    loadPosts(1, true);
+  }, [currentDate]);
 
   async function loadUserLikes() {
     if (!user) return;

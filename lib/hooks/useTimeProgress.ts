@@ -7,6 +7,7 @@ import { useUserProfile } from './useUserProfile';
 export function useTimeProgress(defaultStartDate: string) {
   const { profile } = useUserProfile();
   const [currentDate, setCurrentDate] = useState<Date>(() => {
+    // Initialize with default start date
     return new Date(defaultStartDate);
   });
 
@@ -21,9 +22,13 @@ export function useTimeProgress(defaultStartDate: string) {
       const realDaysElapsed = differenceInDays(now, createdAt);
       
       // Add elapsed days to the historical start date
-      setCurrentDate(addDays(startDate, realDaysElapsed));
+      const newDate = addDays(startDate, realDaysElapsed);
+      setCurrentDate(newDate);
+    } else {
+      // If no profile is loaded, reset to default start date
+      setCurrentDate(new Date(defaultStartDate));
     }
-  }, [profile]);
+  }, [profile, defaultStartDate]);
 
   useEffect(() => {
     const timer = setInterval(() => {

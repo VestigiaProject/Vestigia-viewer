@@ -90,7 +90,7 @@ export function Post({ post, likes, isLiked, commentsCount, onLike }: PostProps)
               <div className="flex items-center gap-2">
                 <Link
                   href={`/profile/${post.historical_figures.id}`}
-                  className="font-semibold hover:underline"
+                  className="font-semibold hover:underline font-essays"
                 >
                   {post.historical_figures.name}
                 </Link>
@@ -100,7 +100,7 @@ export function Post({ post, likes, isLiked, commentsCount, onLike }: PostProps)
               </div>
             </div>
             {title && (
-              <p className="text-sm text-muted-foreground mt-0.5">
+              <p className="text-sm text-muted-foreground mt-0.5 font-essays">
                 {title}
               </p>
             )}
@@ -131,7 +131,7 @@ export function Post({ post, likes, isLiked, commentsCount, onLike }: PostProps)
                   )}
                 </div>
               )}
-              <div className="mt-3 text-sm text-muted-foreground">
+              <div className="mt-3 text-sm text-muted-foreground font-essays">
                 {formatDistanceToNow(new Date(post.created_at), { 
                   addSuffix: true,
                   locale: language === 'fr' ? fr : undefined 

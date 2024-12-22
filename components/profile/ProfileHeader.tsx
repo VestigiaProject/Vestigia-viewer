@@ -34,17 +34,17 @@ export function ProfileHeader({ figure, postCount }: ProfileHeaderProps) {
             </div>
             <div>
               <div className="flex items-center gap-1 mb-1">
-                <h1 className="text-2xl font-bold">{figure.name}</h1>
+                <h1 className="text-2xl font-bold font-essays">{figure.name}</h1>
                 {figure.checkmark && (
                   <Check className="h-5 w-5 text-blue-500" />
                 )}
               </div>
-              <p className="text-muted-foreground font-medium">{title}</p>
+              <p className="text-muted-foreground font-medium font-essays">{title}</p>
             </div>
-            <div className="prose prose-sm max-w-none text-gray-600">
+            <div className="prose prose-sm max-w-none text-gray-600 font-essays">
               <Markdown content={biography || ''} />
             </div>
-            <div className="flex gap-4 text-sm text-muted-foreground border-t pt-4">
+            <div className="flex gap-4 text-sm text-muted-foreground border-t pt-4 font-essays">
               <span className="font-medium">{postCount} {t('timeline.posts')}</span>
             </div>
           </div>

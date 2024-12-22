@@ -86,7 +86,7 @@ export function Post({ post, likes, isLiked, commentsCount, onLike }: PostProps)
             </Link>
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-2">
               <div className="flex items-center gap-2 flex-wrap">
                 <Link
                   href={`/profile/${post.historical_figures.id}`}
@@ -98,15 +98,9 @@ export function Post({ post, likes, isLiked, commentsCount, onLike }: PostProps)
                   <Check className="h-4 w-4 shrink-0 text-blue-500" />
                 )}
               </div>
-              <span className="text-sm text-muted-foreground shrink-0">
-                {formatDistanceToNow(new Date(post.created_at), { 
-                  addSuffix: true,
-                  locale: language === 'fr' ? fr : undefined 
-                })}
-              </span>
             </div>
             {title && (
-              <p className="text-sm text-muted-foreground mb-2">
+              <p className="text-sm text-muted-foreground mt-0.5">
                 {title}
               </p>
             )}
@@ -137,6 +131,12 @@ export function Post({ post, likes, isLiked, commentsCount, onLike }: PostProps)
                   )}
                 </div>
               )}
+              <div className="mt-3 text-sm text-muted-foreground">
+                {formatDistanceToNow(new Date(post.created_at), { 
+                  addSuffix: true,
+                  locale: language === 'fr' ? fr : undefined 
+                })}
+              </div>
             </div>
           </div>
         </div>

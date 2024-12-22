@@ -214,7 +214,7 @@ export function HistoricalPost({
             </Link>
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 flex-wrap">
                 <Link
                   href={`/profile/${post.figure.id}`}
@@ -231,7 +231,7 @@ export function HistoricalPost({
                 {format(new Date(post.original_date), language === 'fr' ? 'd MMM yyyy' : 'MMM d, yyyy', { locale: language === 'fr' ? fr : undefined })}
               </span>
             </div>
-            <p className="text-sm text-muted-foreground mb-2">
+            <p className="text-sm text-muted-foreground mt-0.5">
               {title}
             </p>
             <div className="text-[15px] break-words -ml-[44px] sm:ml-0">

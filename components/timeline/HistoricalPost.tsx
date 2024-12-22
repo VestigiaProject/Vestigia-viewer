@@ -203,9 +203,9 @@ export function HistoricalPost({
 
   return (
     <div onClick={handlePostClick}>
-      <Card className="p-4 bg-white hover:bg-gray-50 transition-colors cursor-pointer shadow-sm">
+      <Card className="p-4 sm:p-4 bg-white hover:bg-gray-50 transition-colors cursor-pointer shadow-sm">
         <div className="flex gap-4">
-          <div className="shrink-0">
+          <div className="shrink-0 -ml-[44px] sm:ml-0">
             <Link href={`/profile/${post.figure.id}`} onClick={(e) => e.stopPropagation()}>
               <Avatar>
                 <AvatarImage src={post.figure.profile_image} />
@@ -234,7 +234,7 @@ export function HistoricalPost({
             <p className="text-sm text-muted-foreground mt-0.5">
               {title}
             </p>
-            <div className="text-[15px] break-words -ml-[44px] sm:ml-0">
+            <div className="text-[15px] break-words mt-4">
               <Markdown content={content} className="prose-p:my-1 prose-p:leading-relaxed" />
               {post.media_url && (
                 <div className="mt-3 rounded-lg overflow-hidden">

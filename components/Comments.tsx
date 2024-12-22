@@ -198,7 +198,7 @@ export function Comments({ comments, onComment, onDeleteComment, onLikeComment }
                     </div>
                   </div>
                   <div className="text-sm">
-                    <Markdown content={comment.content} />
+                    <Markdown content={comment.content || ''} />
                   </div>
                   <div className="mt-2 flex items-center gap-2">
                     <Button

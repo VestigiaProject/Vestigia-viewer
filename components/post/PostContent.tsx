@@ -52,13 +52,13 @@ export function PostContent({ id }: { id: string }) {
         
         // Fetch source content based on language
         const { data: sourceData } = await supabase
-          .from(language === 'en' ? 'source_en' : 'historical_posts')
-          .select('source')
+          .from('historical_posts')
+          .select('source, source_en')
           .eq('id', id)
           .single();
           
         if (sourceData) {
-          setSourceContent(sourceData.source);
+          setSourceContent(language === 'en' && sourceData.source_en ? sourceData.source_en : sourceData.source);
         }
 
         // Fetch interactions
@@ -133,13 +133,13 @@ export function PostContent({ id }: { id: string }) {
             setError(false);
 
             const { data: sourceData } = await supabase
-              .from(language === 'en' ? 'source_en' : 'historical_posts')
-              .select('source')
+              .from('historical_posts')
+              .select('source, source_en')
               .eq('id', id)
               .single();
               
             if (sourceData) {
-              setSourceContent(sourceData.source);
+              setSourceContent(language === 'en' && sourceData.source_en ? sourceData.source_en : sourceData.source);
             }
           }
         }
@@ -322,16 +322,20 @@ export function PostContent({ id }: { id: string }) {
         onLike={handleLike}
       />
       
-      <Accordion type="single" collapsible>
-        <AccordionItem value="source">
-          <AccordionTrigger>{t('post.source')}</AccordionTrigger>
-          <AccordionContent>
-            <div className="whitespace-pre-wrap p-4 bg-muted rounded-md">
-              {sourceContent}
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
+      <div className="bg-card border rounded-lg">
+        <Accordion type="single" collapsible>
+          <AccordionItem value="source" className="border-none">
+            <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-accent">
+              {t('post.source')}
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="whitespace-pre-wrap p-4 text-sm">
+                {sourceContent}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </div>
 
       <div className="mt-8">
         <Comments 

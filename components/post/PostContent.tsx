@@ -326,11 +326,11 @@ export function PostContent({ id }: { id: string }) {
       <div className="bg-card border rounded-lg">
         <Accordion type="single" collapsible>
           <AccordionItem value="source" className="border-none">
-            <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-accent font-essays">
+            <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-accent">
               {t('post.source')}
             </AccordionTrigger>
             <AccordionContent>
-              <div className="p-4 text-sm font-essays">
+              <div className="p-4 text-sm">
                 <Markdown content={sourceContent} />
               </div>
             </AccordionContent>

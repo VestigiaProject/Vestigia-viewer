@@ -218,7 +218,7 @@ export function HistoricalPost({
               <div className="flex items-center gap-2">
                 <Link
                   href={`/profile/${post.figure.id}`}
-                  className="font-semibold hover:underline font-essays"
+                  className="font-semibold hover:underline"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {post.figure.name}
@@ -227,11 +227,11 @@ export function HistoricalPost({
                   <Check className="h-4 w-4 shrink-0 text-blue-500" />
                 )}
               </div>
-              <span className="text-sm text-muted-foreground shrink-0 ml-auto font-essays">
+              <span className="text-sm text-muted-foreground shrink-0 ml-auto">
                 {format(new Date(post.original_date), language === 'fr' ? 'd MMM yyyy' : 'MMM d, yyyy', { locale: language === 'fr' ? fr : undefined })}
               </span>
             </div>
-            <p className="text-sm text-muted-foreground mt-0.5 font-essays">
+            <p className="text-sm text-muted-foreground mt-0.5">
               {title}
             </p>
             <div className="text-[15px] break-words mt-4">

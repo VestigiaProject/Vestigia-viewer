@@ -173,11 +173,11 @@ export function Comments({ comments, onComment, onDeleteComment, onLikeComment }
               <div className="flex-1">
                 <div className="bg-muted rounded-lg p-4">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="font-medium font-essays">
+                    <span className="font-medium">
                       {comment.user_profiles?.username || user?.email || ''}
                     </span>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground font-essays">
+                      <span className="text-sm text-muted-foreground">
                         {formatDistanceToNow(new Date(comment.created_at), {
                           addSuffix: true,
                           locale: language === 'fr' ? fr : undefined
@@ -197,8 +197,8 @@ export function Comments({ comments, onComment, onDeleteComment, onLikeComment }
                       )}
                     </div>
                   </div>
-                  <div className="text-sm font-essays">
-                    {comment.content}
+                  <div className="text-sm">
+                    <Markdown content={comment.content || ''} />
                   </div>
                   <div className="mt-2 flex items-center gap-2">
                     <Button

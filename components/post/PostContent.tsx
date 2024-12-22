@@ -323,7 +323,7 @@ export function PostContent({ id }: { id: string }) {
       />
       
       <Accordion type="single" collapsible>
-        <AccordionItem value="source" className="border rounded-lg bg-card">
+        <AccordionItem value="source">
           <AccordionTrigger>{t('post.source')}</AccordionTrigger>
           <AccordionContent>
             <div className="whitespace-pre-wrap p-4 bg-muted rounded-md">

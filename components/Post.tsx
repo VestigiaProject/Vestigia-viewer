@@ -10,6 +10,7 @@ import { fr } from 'date-fns/locale';
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from '@/lib/hooks/useTranslation';
 import { Markdown } from '@/components/ui/markdown';
+import { cn } from '@/lib/utils';
 
 interface PostProps {
   post: {
@@ -73,84 +74,85 @@ export function Post({ post, likes, isLiked, commentsCount, onLike }: PostProps)
   }, []);
 
   return (
-    <div className="border rounded-lg p-4 bg-card">
-      <div className="flex items-start space-x-4">
+    <div className="border rounded-lg p-3 bg-card">
+      <div className="flex gap-3">
         <Link href={`/profile/${post.historical_figures.id}`}>
-          <Avatar className="h-12 w-12">
+          <Avatar className="h-10 w-10">
             <AvatarImage src={post.historical_figures.profile_image} />
             <AvatarFallback>{post.historical_figures.name[0]}</AvatarFallback>
           </Avatar>
         </Link>
-        <div className="flex-1">
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <div className="flex items-center gap-1">
-                <Link
-                  href={`/profile/${post.historical_figures.id}`}
-                  className="font-semibold hover:underline"
-                >
-                  {post.historical_figures.name}
-                </Link>
-                {post.historical_figures.checkmark && (
-                  <Check className="h-4 w-4 text-blue-500" />
-                )}
-              </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2 mb-0.5">
+            <div className="flex items-center gap-1 min-w-0">
+              <Link
+                href={`/profile/${post.historical_figures.id}`}
+                className="font-semibold hover:underline truncate"
+              >
+                {post.historical_figures.name}
+              </Link>
+              {post.historical_figures.checkmark && (
+                <Check className="h-4 w-4 shrink-0 text-blue-500" />
+              )}
               {title && (
-                <p className="text-sm text-muted-foreground">
-                  {title}
-                </p>
+                <span className="text-muted-foreground text-sm truncate">· {title}</span>
               )}
             </div>
-            <span className="text-sm text-muted-foreground shrink-0 ml-4">
+            <span className="text-sm text-muted-foreground shrink-0">
               {formatDistanceToNow(new Date(post.created_at), { 
                 addSuffix: true,
                 locale: language === 'fr' ? fr : undefined 
               })}
             </span>
           </div>
-          <div className="mt-2 text-base">
-            <Markdown content={content} />
+          <div className="text-[15px] break-words">
+            <Markdown content={content} className="prose-p:my-1 prose-p:leading-[1.3]" />
           </div>
           {post.media_url && (
-            isVideoUrl(post.media_url) ? (
-              <video
-                ref={videoRef}
-                src={post.media_url}
-                className="rounded-lg w-full object-contain mt-2"
-                controls
-                muted
-                loop
-                playsInline
-                preload="metadata"
-                controlsList="nodownload"
-              />
-            ) : (
-              <img
-                src={post.media_url}
-                alt="Post media"
-                className="rounded-lg max-h-96 object-cover mt-2"
-                loading="lazy"
-                decoding="async"
-              />
-            )
+            <div className="mt-2 rounded-lg overflow-hidden">
+              {isVideoUrl(post.media_url) ? (
+                <video
+                  ref={videoRef}
+                  src={post.media_url}
+                  className="w-full object-contain"
+                  controls
+                  muted
+                  loop
+                  playsInline
+                  preload="metadata"
+                  controlsList="nodownload"
+                />
+              ) : (
+                <img
+                  src={post.media_url}
+                  alt="Post media"
+                  className="w-full max-h-[512px] object-cover"
+                  loading="lazy"
+                  decoding="async"
+                />
+              )}
+            </div>
           )}
-          <div className="flex items-center space-x-4 mt-4">
+          <div className="flex items-center gap-4 mt-3">
             <Button
               variant="ghost"
               size="sm"
-              className={`space-x-1 ${isLiked ? 'text-red-500' : ''}`}
+              className={cn(
+                "h-8 px-2 hover:text-red-600",
+                isLiked && "text-red-500"
+              )}
               onClick={onLike}
             >
-              <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
-              <span>{likes}</span>
+              <Heart className={cn("h-4 w-4 mr-2", isLiked && "fill-current")} />
+              <span className="text-sm">{likes}</span>
             </Button>
             <Button
               variant="ghost"
               size="sm"
-              className="space-x-1"
+              className="h-8 px-2 hover:text-blue-600"
             >
-              <MessageCircle className="h-4 w-4" />
-              <span>{t('comments.title')} ({commentsCount})</span>
+              <MessageCircle className="h-4 w-4 mr-2" />
+              <span className="text-sm">{commentsCount}</span>
             </Button>
           </div>
         </div>

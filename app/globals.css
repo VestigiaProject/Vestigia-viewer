@@ -80,3 +80,19 @@
     @apply bg-background text-foreground;
   }
 }
+
+@keyframes highlight {
+  0% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+  }
+}
+
+.highlight-post {
+  animation: highlight 2s ease-in-out;
+}

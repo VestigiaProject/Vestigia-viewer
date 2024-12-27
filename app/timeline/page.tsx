@@ -31,6 +31,12 @@ interface TimelineState {
   scrollPosition: number;
 }
 
+interface TimelineTarget {
+  postId: string;
+  page: number;
+  date: string;
+}
+
 export default function TimelinePage() {
   const { user } = useAuth();
   const { currentDate } = useTimeProgress(START_DATE);
@@ -315,6 +321,39 @@ export default function TimelinePage() {
     }));
   }
 
+  // Handle timeline target (when coming back from a post)
+  useEffect(() => {
+    const handleTimelineTarget = async () => {
+      if (typeof window === 'undefined') return;
+      
+      const targetJson = sessionStorage.getItem('timeline_target');
+      if (!targetJson) return;
+
+      const target = JSON.parse(targetJson) as TimelineTarget;
+      sessionStorage.removeItem('timeline_target'); // Clear the target
+
+      // Load all pages up to the target page
+      for (let i = 1; i <= target.page; i++) {
+        await loadPosts(i, i === 1);
+      }
+
+      // Wait for the posts to render
+      setTimeout(() => {
+        const targetElement = document.getElementById(`post-${target.postId}`);
+        if (targetElement) {
+          targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Add a highlight effect
+          targetElement.classList.add('highlight-post');
+          setTimeout(() => {
+            targetElement.classList.remove('highlight-post');
+          }, 2000);
+        }
+      }, 100);
+    };
+
+    handleTimelineTarget();
+  }, []);
+
   return (
     <main className="container max-w-2xl mx-auto py-4">
       {loading ? (
@@ -344,7 +383,11 @@ export default function TimelinePage() {
         >
           <div className="space-y-4">
             {posts.map((post) => (
-              <div key={post.id} className="bg-white/95 rounded-lg shadow-sm">
+              <div 
+                key={post.id} 
+                id={`post-${post.id}`}
+                className="bg-white/95 rounded-lg shadow-sm transition-all duration-500"
+              >
                 <HistoricalPost
                   post={post}
                   onLike={handleLike}

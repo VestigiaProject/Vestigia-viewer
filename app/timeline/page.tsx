@@ -5,13 +5,20 @@ import { useTimeProgress } from '@/lib/hooks/useTimeProgress';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { fetchPosts, fetchPostInteractions } from '@/lib/api/posts';
 import { supabase } from '@/lib/supabase';
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { HistoricalPostWithFigure, UserInteraction } from '@/lib/supabase';
-import { useVisibilityChange } from '@/lib/hooks/useVisibilityChange';
+import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 const START_DATE = '1789-06-04';
+
+interface UserInteractionPayload {
+  post_id: string;
+  user_id: string;
+  type: 'like' | 'comment';
+  content?: string;
+}
 
 export default function TimelinePage() {
   const { user } = useAuth();
@@ -22,24 +29,11 @@ export default function TimelinePage() {
   const [loading, setLoading] = useState(true);
   const [userLikes, setUserLikes] = useState<Set<string>>(new Set());
   const [postInteractions, setPostInteractions] = useState<Record<string, { likes: number; comments: UserInteraction[] }>>({});
-  const isVisible = useVisibilityChange();
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const lastLoadedPage = useRef(1);
 
-  const loadPosts = useCallback(async (pageToLoad: number, resetPosts: boolean = false, showLoading: boolean = false) => {
-    if (!isVisible) return;
-    
+  const loadPosts = useCallback(async (pageToLoad: number, resetPosts: boolean = false) => {
     try {
-      if (showLoading) {
-        setLoading(true);
-      }
-      
       const newPosts = await fetchPosts(currentDate, pageToLoad);
       
-      if (newPosts.length > 0) {
-        lastLoadedPage.current = pageToLoad;
-      }
-
       const existingPostIds = new Set(resetPosts ? [] : posts.map(post => post.id));
       const uniqueNewPosts = newPosts.filter(post => !existingPostIds.has(post.id));
       
@@ -69,44 +63,56 @@ export default function TimelinePage() {
     } catch (error) {
       console.error('Error loading posts:', error);
     } finally {
-      if (showLoading) {
-        setLoading(false);
-      }
-      if (isInitialLoad) {
-        setIsInitialLoad(false);
-      }
+      setLoading(false);
     }
-  }, [currentDate, posts, isVisible, isInitialLoad]);
+  }, [currentDate, posts]);
 
-  // Initial load - only once
+  // Initial load
   useEffect(() => {
-    if (isInitialLoad) {
-      loadUserLikes();
-      loadPosts(1, true, true);
-    }
-  }, [isInitialLoad]);
-
-  // Handle visibility changes
-  useEffect(() => {
-    if (!isInitialLoad && isVisible) {
-      const reloadMissingPosts = async () => {
-        for (let i = 1; i <= lastLoadedPage.current; i++) {
-          await loadPosts(i, false, false);
-        }
-      };
-      reloadMissingPosts();
-    }
-  }, [isVisible, isInitialLoad]);
+    loadUserLikes();
+    loadPosts(1, true);
+  }, []);
 
   // Handle date changes
   useEffect(() => {
-    if (!isInitialLoad) {
-      setPage(1);
-      lastLoadedPage.current = 1;
-      setHasMore(true);
-      loadPosts(1, true, false);
-    }
-  }, [currentDate, isInitialLoad]);
+    setPage(1);
+    setHasMore(true);
+    loadPosts(1, true);
+  }, [currentDate]);
+
+  // Set up real-time listeners for interactions only
+  useEffect(() => {
+    if (!user) return;
+
+    const interactionsChannel = supabase
+      .channel('interactions_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_interactions',
+          filter: `post_id=in.(${posts.map(p => p.id).join(',')})`,
+        },
+        async (payload: RealtimePostgresChangesPayload<Record<string, any>>) => {
+          const postId = (payload.new as UserInteractionPayload)?.post_id || 
+                        (payload.old as UserInteractionPayload)?.post_id;
+          if (!postId) return;
+
+          // Refetch interactions for the affected post
+          const interactions = await fetchPostInteractions(postId);
+          setPostInteractions(prev => ({
+            ...prev,
+            [postId]: interactions
+          }));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      interactionsChannel.unsubscribe();
+    };
+  }, [user, posts]);
 
   async function loadUserLikes() {
     if (!user) return;
@@ -178,7 +184,7 @@ export default function TimelinePage() {
 
   return (
     <main className="container max-w-2xl mx-auto py-4">
-      {loading && isInitialLoad ? (
+      {loading ? (
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
             <div key={i} className="bg-white/95 rounded-lg shadow-sm">
@@ -192,7 +198,7 @@ export default function TimelinePage() {
           next={() => {
             const nextPage = page + 1;
             setPage(nextPage);
-            loadPosts(nextPage, false, false);
+            loadPosts(nextPage, false);
           }}
           hasMore={hasMore}
           loader={<div className="bg-white/95 rounded-lg shadow-sm my-4"><Skeleton className="h-48 w-full" /></div>}

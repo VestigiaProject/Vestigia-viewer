@@ -9,6 +9,7 @@ import { useEffect, useState, useCallback } from 'react';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { HistoricalPostWithFigure, UserInteraction } from '@/lib/supabase';
+import { useVisibilityChange } from '@/lib/hooks/useVisibilityChange';
 
 const START_DATE = '1789-06-04';
 
@@ -21,8 +22,11 @@ export default function TimelinePage() {
   const [loading, setLoading] = useState(true);
   const [userLikes, setUserLikes] = useState<Set<string>>(new Set());
   const [postInteractions, setPostInteractions] = useState<Record<string, { likes: number; comments: UserInteraction[] }>>({});
+  const isVisible = useVisibilityChange();
 
   const loadPosts = useCallback(async (pageToLoad: number, resetPosts: boolean = false) => {
+    if (!isVisible) return; // Don't load posts when tab is not visible
+    
     try {
       const newPosts = await fetchPosts(currentDate, pageToLoad);
       
@@ -62,20 +66,24 @@ export default function TimelinePage() {
       console.error('Error loading posts:', error);
       setLoading(false);
     }
-  }, [currentDate, posts]);
+  }, [currentDate, posts, isVisible]);
 
   // Initial load
   useEffect(() => {
-    loadUserLikes();
-  }, []);
+    if (isVisible) {
+      loadUserLikes();
+    }
+  }, [isVisible]);
 
-  // Reload posts when current date changes
+  // Reload posts when current date changes and tab is visible
   useEffect(() => {
-    setPage(1);
-    setHasMore(true);
-    setLoading(true);
-    loadPosts(1, true);
-  }, [currentDate]);
+    if (isVisible) {
+      setPage(1);
+      setHasMore(true);
+      setLoading(true);
+      loadPosts(1, true);
+    }
+  }, [currentDate, isVisible]);
 
   async function loadUserLikes() {
     if (!user) return;

@@ -16,8 +16,6 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import type { UserInteraction } from '@/lib/supabase';
 import { useTranslation } from '@/lib/hooks/useTranslation';
 import { Markdown } from '@/components/ui/markdown';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
 
 type CommentWithUser = UserInteraction & {
   user_profiles: {
@@ -303,99 +301,51 @@ export function PostContent({ id }: { id: string }) {
     }
   };
 
-  const handleBackToTimeline = async () => {
-    try {
-      // Get the post's date to find its position in the timeline
-      const { data: postData } = await supabase
-        .from('historical_posts')
-        .select('original_date')
-        .eq('id', id)
-        .single();
-
-      if (postData) {
-        // Get all posts up to this date to calculate the page number
-        const { data: olderPosts } = await supabase
-          .from('historical_posts')
-          .select('id')
-          .gte('original_date', postData.original_date)
-          .order('original_date', { ascending: false });
-
-        if (olderPosts) {
-          const postIndex = olderPosts.findIndex(p => p.id === id);
-          const page = Math.floor(postIndex / 10) + 1;
-          
-          // Store the target post info in sessionStorage
-          const timelineTarget = {
-            postId: id,
-            page,
-            date: postData.original_date
-          };
-          sessionStorage.setItem('timeline_target', JSON.stringify(timelineTarget));
-          
-          router.push('/timeline');
-        }
-      }
-    } catch (error) {
-      console.error('Error navigating back to timeline:', error);
-      router.push('/timeline');
-    }
-  };
-
   if (error) {
     return (
-      <div className="container max-w-2xl mx-auto py-4">
-        <div className="bg-white/95 rounded-lg shadow-sm p-4">
-          <Button
-            variant="ghost"
-            className="mb-4"
-            onClick={() => router.push('/timeline')}
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            {t('common.back_to_timeline')}
-          </Button>
-          <p className="text-center text-muted-foreground">
-            {t('error.post_not_found')}
-          </p>
+      <div className="max-w-2xl mx-auto p-4">
+        <div className="bg-destructive/10 text-destructive rounded-lg p-4">
+          This post is no longer available.
         </div>
       </div>
     );
   }
 
-  if (!post) {
-    return null;
-  }
+  if (!post) return null;
 
   return (
-    <div className="container max-w-2xl mx-auto py-4">
-      <div className="bg-white/95 rounded-lg shadow-sm">
-        <div className="p-4">
-          <Button
-            variant="ghost"
-            className="mb-4"
-            onClick={handleBackToTimeline}
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            {t('common.back_to_timeline')}
-          </Button>
-          <Post
-            post={post}
-            onLike={handleLike}
-            likes={likes}
-            isLiked={isLiked}
-            comments={comments}
-            onComment={handleComment}
-          />
-          {sourceContent && (
-            <Accordion type="single" collapsible className="mt-4">
-              <AccordionItem value="source">
-                <AccordionTrigger>{t('post.source')}</AccordionTrigger>
-                <AccordionContent>
-                  <Markdown content={sourceContent} />
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-          )}
-        </div>
+    <div className="max-w-2xl mx-auto p-4 space-y-6">
+      <Post 
+        post={post}
+        likes={likes}
+        isLiked={isLiked}
+        commentsCount={comments.length}
+        onLike={handleLike}
+      />
+      
+      <div className="bg-card border rounded-lg">
+        <Accordion type="single" collapsible>
+          <AccordionItem value="source" className="border-none">
+            <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-accent">
+              {t('post.source')}
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="p-4 text-sm">
+                <Markdown content={sourceContent} />
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </div>
+
+      <div className="mt-8">
+        <Comments 
+          postId={id} 
+          comments={comments} 
+          onComment={handleComment}
+          onDeleteComment={handleDeleteComment}
+          onLikeComment={handleLikeComment}
+        />
       </div>
     </div>
   );

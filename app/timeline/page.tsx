@@ -28,6 +28,7 @@ interface TimelineState {
   postInteractions: Record<string, { likes: number; comments: UserInteraction[] }>;
   userLikes: string[];
   currentDate: string;
+  scrollPosition: number;
 }
 
 export default function TimelinePage() {
@@ -99,6 +100,19 @@ export default function TimelinePage() {
     return {};
   });
 
+  const [scrollPosition, setScrollPosition] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = sessionStorage.getItem(SESSION_KEY);
+      if (saved) {
+        const state = JSON.parse(saved) as TimelineState;
+        if (state.currentDate === currentDateStr) {
+          return state.scrollPosition || 0;
+        }
+      }
+    }
+    return 0;
+  });
+
   // Save state to sessionStorage whenever it changes
   useEffect(() => {
     if (posts.length > 0) {
@@ -108,11 +122,29 @@ export default function TimelinePage() {
         hasMore,
         postInteractions,
         userLikes: Array.from(userLikes),
-        currentDate: currentDateStr
+        currentDate: currentDateStr,
+        scrollPosition
       };
       sessionStorage.setItem(SESSION_KEY, JSON.stringify(state));
     }
-  }, [posts, page, hasMore, postInteractions, userLikes, currentDateStr]);
+  }, [posts, page, hasMore, postInteractions, userLikes, currentDateStr, scrollPosition]);
+
+  // Restore scroll position after initial render
+  useEffect(() => {
+    if (scrollPosition > 0 && !loading) {
+      window.scrollTo(0, scrollPosition);
+    }
+  }, [loading]);
+
+  // Save scroll position before navigating away
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollPosition(window.scrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const loadPosts = useCallback(async (pageToLoad: number, resetPosts: boolean = false) => {
     // Don't reload if we already have the posts for this page and date
@@ -308,6 +340,7 @@ export default function TimelinePage() {
               No more historical posts to load
             </p>
           }
+          scrollThreshold="200px"
         >
           <div className="space-y-4">
             {posts.map((post) => (

@@ -23,17 +23,19 @@ export default function TimelinePage() {
   const [userLikes, setUserLikes] = useState<Set<string>>(new Set());
   const [postInteractions, setPostInteractions] = useState<Record<string, { likes: number; comments: UserInteraction[] }>>({});
   const isVisible = useVisibilityChange();
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  const loadPosts = useCallback(async (pageToLoad: number, resetPosts: boolean = false) => {
-    if (!isVisible) return; // Don't load posts when tab is not visible
+  const loadPosts = useCallback(async (pageToLoad: number, resetPosts: boolean = false, showLoading: boolean = false) => {
+    if (!isVisible) return;
     
     try {
+      if (showLoading) {
+        setLoading(true);
+      }
+      
       const newPosts = await fetchPosts(currentDate, pageToLoad);
       
-      // Create a Set of existing post IDs for efficient lookup
       const existingPostIds = new Set(resetPosts ? [] : posts.map(post => post.id));
-      
-      // Filter out any duplicate posts
       const uniqueNewPosts = newPosts.filter(post => !existingPostIds.has(post.id));
       
       if (uniqueNewPosts.length === 0) {
@@ -41,7 +43,6 @@ export default function TimelinePage() {
         return;
       }
 
-      // Sort all posts by original_date in descending order
       setPosts(prev => {
         const allPosts = resetPosts ? uniqueNewPosts : [...prev, ...uniqueNewPosts];
         return allPosts.sort((a, b) => 
@@ -51,7 +52,6 @@ export default function TimelinePage() {
       
       setHasMore(newPosts.length === 10);
       
-      // Load interactions for new posts
       const interactions = await Promise.all(
         uniqueNewPosts.map((post) => fetchPostInteractions(post.id))
       );
@@ -61,29 +61,41 @@ export default function TimelinePage() {
       }, {} as Record<string, { likes: number; comments: UserInteraction[] }>);
       
       setPostInteractions(prev => resetPosts ? newInteractions : { ...prev, ...newInteractions });
-      setLoading(false);
     } catch (error) {
       console.error('Error loading posts:', error);
-      setLoading(false);
+    } finally {
+      if (showLoading) {
+        setLoading(false);
+      }
+      if (isInitialLoad) {
+        setIsInitialLoad(false);
+      }
     }
-  }, [currentDate, posts, isVisible]);
+  }, [currentDate, posts, isVisible, isInitialLoad]);
 
-  // Initial load
+  // Initial load - only once
   useEffect(() => {
-    if (isVisible) {
+    if (isInitialLoad) {
       loadUserLikes();
+      loadPosts(1, true, true);
     }
-  }, [isVisible]);
+  }, [isInitialLoad]);
 
-  // Reload posts when current date changes and tab is visible
+  // Handle visibility changes
   useEffect(() => {
-    if (isVisible) {
+    if (!isInitialLoad && isVisible) {
+      loadPosts(page, false, false);
+    }
+  }, [isVisible, isInitialLoad, page]);
+
+  // Handle date changes
+  useEffect(() => {
+    if (!isInitialLoad) {
       setPage(1);
       setHasMore(true);
-      setLoading(true);
-      loadPosts(1, true);
+      loadPosts(1, true, false);
     }
-  }, [currentDate, isVisible]);
+  }, [currentDate, isInitialLoad]);
 
   async function loadUserLikes() {
     if (!user) return;
@@ -155,7 +167,7 @@ export default function TimelinePage() {
 
   return (
     <main className="container max-w-2xl mx-auto py-4">
-      {loading ? (
+      {loading && isInitialLoad ? (
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
             <div key={i} className="bg-white/95 rounded-lg shadow-sm">
@@ -169,7 +181,7 @@ export default function TimelinePage() {
           next={() => {
             const nextPage = page + 1;
             setPage(nextPage);
-            loadPosts(nextPage);
+            loadPosts(nextPage, false, false);
           }}
           hasMore={hasMore}
           loader={<div className="bg-white/95 rounded-lg shadow-sm my-4"><Skeleton className="h-48 w-full" /></div>}

@@ -5,7 +5,7 @@ import { useTimeProgress } from '@/lib/hooks/useTimeProgress';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { fetchPosts, fetchPostInteractions } from '@/lib/api/posts';
 import { supabase } from '@/lib/supabase';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { HistoricalPostWithFigure, UserInteraction } from '@/lib/supabase';
@@ -24,6 +24,7 @@ export default function TimelinePage() {
   const [postInteractions, setPostInteractions] = useState<Record<string, { likes: number; comments: UserInteraction[] }>>({});
   const isVisible = useVisibilityChange();
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const lastLoadedPage = useRef(1);
 
   const loadPosts = useCallback(async (pageToLoad: number, resetPosts: boolean = false, showLoading: boolean = false) => {
     if (!isVisible) return;
@@ -35,6 +36,10 @@ export default function TimelinePage() {
       
       const newPosts = await fetchPosts(currentDate, pageToLoad);
       
+      if (newPosts.length > 0) {
+        lastLoadedPage.current = pageToLoad;
+      }
+
       const existingPostIds = new Set(resetPosts ? [] : posts.map(post => post.id));
       const uniqueNewPosts = newPosts.filter(post => !existingPostIds.has(post.id));
       
@@ -84,14 +89,20 @@ export default function TimelinePage() {
   // Handle visibility changes
   useEffect(() => {
     if (!isInitialLoad && isVisible) {
-      loadPosts(page, false, false);
+      const reloadMissingPosts = async () => {
+        for (let i = 1; i <= lastLoadedPage.current; i++) {
+          await loadPosts(i, false, false);
+        }
+      };
+      reloadMissingPosts();
     }
-  }, [isVisible, isInitialLoad, page]);
+  }, [isVisible, isInitialLoad]);
 
   // Handle date changes
   useEffect(() => {
     if (!isInitialLoad) {
       setPage(1);
+      lastLoadedPage.current = 1;
       setHasMore(true);
       loadPosts(1, true, false);
     }

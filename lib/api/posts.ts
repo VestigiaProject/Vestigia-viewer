@@ -4,6 +4,10 @@ import type { HistoricalPostWithFigure, UserInteraction } from '../supabase';
 export async function fetchPosts(currentDate: Date, page: number = 1, limit: number = 10) {
   const start = (page - 1) * limit;
   
+  // Calculate the date window: 30 days before up to current date
+  const thirtyDaysBefore = new Date(currentDate);
+  thirtyDaysBefore.setDate(currentDate.getDate() - 30);
+  
   const { data, error } = await supabase
     .from('historical_posts')
     .select(`
@@ -27,6 +31,7 @@ export async function fetchPosts(currentDate: Date, page: number = 1, limit: num
         checkmark
       )
     `)
+    .gte('original_date', thirtyDaysBefore.toISOString())
     .lte('original_date', currentDate.toISOString())
     .order('original_date', { ascending: false })
     .range(start, start + limit - 1);

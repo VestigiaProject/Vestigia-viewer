@@ -8,35 +8,38 @@ export function useTimeProgress(defaultStartDate: string) {
   const { profile } = useUserProfile();
   const [currentDate, setCurrentDate] = useState<Date>(() => {
     // Initialize with default start date
-    return new Date(defaultStartDate);
-  });
-
-  useEffect(() => {
     if (profile?.start_date && profile?.created_at) {
-      // Calculate elapsed time since user created their account
       const startDate = parseISO(profile.start_date);
       const createdAt = parseISO(profile.created_at);
       const now = new Date();
-      
-      // Calculate days elapsed since account creation
       const realDaysElapsed = differenceInDays(now, createdAt);
-      
-      // Add elapsed days to the historical start date
-      const newDate = addDays(startDate, realDaysElapsed);
-      setCurrentDate(newDate);
-    } else {
-      // If no profile is loaded, reset to default start date
-      setCurrentDate(new Date(defaultStartDate));
+      return addDays(startDate, realDaysElapsed);
     }
-  }, [profile, defaultStartDate]);
+    return new Date(defaultStartDate);
+  });
 
+  // Update current date whenever profile changes or real time passes
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentDate(prev => addDays(prev, 1));
-    }, 24 * 60 * 60 * 1000); // Update every 24 hours
+    function updateCurrentDate() {
+      if (profile?.start_date && profile?.created_at) {
+        const startDate = parseISO(profile.start_date);
+        const createdAt = parseISO(profile.created_at);
+        const now = new Date();
+        const realDaysElapsed = differenceInDays(now, createdAt);
+        setCurrentDate(addDays(startDate, realDaysElapsed));
+      } else {
+        setCurrentDate(new Date(defaultStartDate));
+      }
+    }
+
+    // Update immediately
+    updateCurrentDate();
+
+    // Update every minute to catch day changes
+    const timer = setInterval(updateCurrentDate, 60 * 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [profile, defaultStartDate]);
 
   const daysElapsed = differenceInDays(
     currentDate,

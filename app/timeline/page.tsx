@@ -36,82 +36,36 @@ export default function TimelinePage() {
   const { currentDate } = useTimeProgress(START_DATE);
   const currentDateStr = currentDate.toISOString();
 
-  const [posts, setPosts] = useState<HistoricalPostWithFigure[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = sessionStorage.getItem(SESSION_KEY);
-      if (saved) {
-        const state = JSON.parse(saved) as TimelineState;
-        if (state.currentDate === currentDateStr) {
-          return state.posts;
-        }
+  // Clear session storage if the date has changed
+  useEffect(() => {
+    const saved = sessionStorage.getItem(SESSION_KEY);
+    if (saved) {
+      const state = JSON.parse(saved) as TimelineState;
+      if (state.currentDate !== currentDateStr) {
+        sessionStorage.removeItem(SESSION_KEY);
       }
     }
-    return [];
-  });
-  
-  const [page, setPage] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = sessionStorage.getItem(SESSION_KEY);
-      if (saved) {
-        const state = JSON.parse(saved) as TimelineState;
-        if (state.currentDate === currentDateStr) {
-          return state.page;
-        }
-      }
-    }
-    return 1;
-  });
+  }, [currentDateStr]);
 
-  const [hasMore, setHasMore] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = sessionStorage.getItem(SESSION_KEY);
-      if (saved) {
-        const state = JSON.parse(saved) as TimelineState;
-        if (state.currentDate === currentDateStr) {
-          return state.hasMore;
-        }
-      }
-    }
-    return true;
-  });
+  const [posts, setPosts] = useState<HistoricalPostWithFigure[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [userLikes, setUserLikes] = useState<Set<string>>(new Set());
+  const [postInteractions, setPostInteractions] = useState<Record<string, { likes: number; comments: UserInteraction[] }>>({});
+  const [scrollPosition, setScrollPosition] = useState(0);
 
-  const [loading, setLoading] = useState(posts.length === 0);
-  const [userLikes, setUserLikes] = useState<Set<string>>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = sessionStorage.getItem(SESSION_KEY);
-      if (saved) {
-        const state = JSON.parse(saved) as TimelineState;
-        return new Set(state.userLikes);
-      }
-    }
-    return new Set();
-  });
+  // Load initial data
+  useEffect(() => {
+    const loadInitialData = async () => {
+      setLoading(true);
+      await loadUserLikes();
+      await loadPosts(1, true);
+      setLoading(false);
+    };
 
-  const [postInteractions, setPostInteractions] = useState<Record<string, { likes: number; comments: UserInteraction[] }>>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = sessionStorage.getItem(SESSION_KEY);
-      if (saved) {
-        const state = JSON.parse(saved) as TimelineState;
-        if (state.currentDate === currentDateStr) {
-          return state.postInteractions;
-        }
-      }
-    }
-    return {};
-  });
-
-  const [scrollPosition, setScrollPosition] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = sessionStorage.getItem(SESSION_KEY);
-      if (saved) {
-        const state = JSON.parse(saved) as TimelineState;
-        if (state.currentDate === currentDateStr) {
-          return state.scrollPosition || 0;
-        }
-      }
-    }
-    return 0;
-  });
+    loadInitialData();
+  }, [currentDateStr]); // Reload when date changes
 
   // Save state to sessionStorage whenever it changes
   useEffect(() => {
@@ -187,31 +141,6 @@ export default function TimelinePage() {
       setLoading(false);
     }
   }, [currentDate, posts]);
-
-  // Initial load only if we don't have posts
-  useEffect(() => {
-    if (posts.length === 0) {
-      loadUserLikes();
-      loadPosts(1, true);
-    }
-  }, []);
-
-  // Handle date changes
-  useEffect(() => {
-    const saved = sessionStorage.getItem(SESSION_KEY);
-    if (saved) {
-      const state = JSON.parse(saved) as TimelineState;
-      if (state.currentDate !== currentDateStr) {
-        setPage(1);
-        setHasMore(true);
-        loadPosts(1, true);
-      }
-    } else {
-      setPage(1);
-      setHasMore(true);
-      loadPosts(1, true);
-    }
-  }, [currentDate]);
 
   // Set up real-time listeners for interactions only
   useEffect(() => {

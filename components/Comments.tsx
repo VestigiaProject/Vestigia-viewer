@@ -14,7 +14,6 @@ import { useUserProfile } from '@/lib/hooks/useUserProfile';
 import { useTranslation } from '@/lib/hooks/useTranslation';
 import { supabase } from '@/lib/supabase';
 import { Markdown } from '@/components/ui/markdown';
-import { handleError } from '@/lib/utils/error-handler';
 
 interface CommentLikes {
   count: number;
@@ -105,10 +104,7 @@ export function Comments({ comments, onComment, onDeleteComment, onLikeComment }
         ...prev,
         [commentId]: currentLikes
       }));
-      handleError(error, {
-        userMessage: t('error.like_comment_failed'),
-        context: { commentId }
-      });
+      console.error('Error liking comment:', error);
     }
   };
 
@@ -121,10 +117,7 @@ export function Comments({ comments, onComment, onDeleteComment, onLikeComment }
       await onComment(newComment);
       setNewComment('');
     } catch (error) {
-      handleError(error, {
-        userMessage: t('error.comment_failed'),
-        context: { commentLength: newComment.length }
-      });
+      console.error('Error submitting comment:', error);
     } finally {
       setIsSubmitting(false);
     }

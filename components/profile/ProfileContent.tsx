@@ -11,7 +11,6 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/lib/hooks/useTranslation';
-import { handleError } from '@/lib/utils/error-handler';
 
 const START_DATE = '1789-06-04';
 
@@ -36,10 +35,7 @@ export function ProfileContent({ id }: { id: string }) {
       setFigure(profile);
       setPostCount(count);
     } catch (error) {
-      handleError(error, {
-        userMessage: t('error.load_profile_failed'),
-        context: { figureId: id }
-      });
+      console.error('Error loading profile:', error);
     } finally {
       setLoading(false);
     }

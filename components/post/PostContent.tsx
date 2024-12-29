@@ -16,7 +16,6 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import type { UserInteraction } from '@/lib/supabase';
 import { useTranslation } from '@/lib/hooks/useTranslation';
 import { Markdown } from '@/components/ui/markdown';
-import { handleError } from '@/lib/utils/error-handler';
 
 type CommentWithUser = UserInteraction & {
   user_profiles: {
@@ -100,10 +99,7 @@ export function PostContent({ id }: { id: string }) {
           setIsLiked(!!userLike);
         }
       } catch (err) {
-        handleError(err, {
-          userMessage: t('error.post_not_found'),
-          context: { postId: id }
-        });
+        console.error('Error fetching post:', err);
         setError(true);
       }
     };
@@ -122,44 +118,30 @@ export function PostContent({ id }: { id: string }) {
           filter: `id=eq.${id}`,
         },
         async (payload) => {
-          try {
-            if (payload.eventType === 'DELETE') {
-              setError(true);
-              return;
-            }
+          if (payload.eventType === 'DELETE') {
+            setError(true);
+            return;
+          }
 
-            const { data: updatedPost, error: postError } = await supabase
+          const { data: updatedPost } = await supabase
+            .from('historical_posts')
+            .select('*, historical_figures(*)')
+            .eq('id', id)
+            .single();
+
+          if (updatedPost) {
+            setPost(updatedPost);
+            setError(false);
+
+            const { data: sourceData } = await supabase
               .from('historical_posts')
-              .select('*, historical_figures(*)')
+              .select('source, source_en')
               .eq('id', id)
               .single();
-
-            if (postError) throw postError;
-
-            if (updatedPost) {
-              setPost(updatedPost);
-              setError(false);
-
-              const { data: sourceData, error: sourceError } = await supabase
-                .from('historical_posts')
-                .select('source, source_en')
-                .eq('id', id)
-                .single();
-                
-              if (sourceError) throw sourceError;
-              if (sourceData) {
-                setSourceContent(language === 'en' && sourceData.source_en ? sourceData.source_en : sourceData.source);
-              }
+              
+            if (sourceData) {
+              setSourceContent(language === 'en' && sourceData.source_en ? sourceData.source_en : sourceData.source);
             }
-          } catch (error) {
-            handleError(error, {
-              userMessage: t('error.update_post_failed'),
-              context: { 
-                postId: id,
-                eventType: payload.eventType
-              }
-            });
-            setError(true);
           }
         }
       )
@@ -177,39 +159,29 @@ export function PostContent({ id }: { id: string }) {
           filter: `post_id=eq.${id}`,
         },
         async () => {
-          try {
-            // Refetch all interactions
-            const [likesData, commentsData] = await Promise.all([
-              supabase
-                .from('user_interactions')
-                .select('*')
-                .eq('post_id', id)
-                .eq('type', 'like'),
-              supabase
-                .from('user_interactions')
-                .select(`
-                  *,
-                  user_profiles (
-                    username,
-                    avatar_url
-                  )
-                `)
-                .eq('post_id', id)
-                .eq('type', 'comment')
-                .order('created_at', { ascending: true })
-            ]);
+          // Refetch all interactions
+          const [likesData, commentsData] = await Promise.all([
+            supabase
+              .from('user_interactions')
+              .select('*')
+              .eq('post_id', id)
+              .eq('type', 'like'),
+            supabase
+              .from('user_interactions')
+              .select(`
+                *,
+                user_profiles (
+                  username,
+                  avatar_url
+                )
+              `)
+              .eq('post_id', id)
+              .eq('type', 'comment')
+              .order('created_at', { ascending: true })
+          ]);
 
-            if (likesData.error) throw likesData.error;
-            if (commentsData.error) throw commentsData.error;
-
-            setLikes(likesData.data?.length || 0);
-            setComments(commentsData.data || []);
-          } catch (error) {
-            handleError(error, {
-              userMessage: t('error.update_interactions_failed'),
-              context: { postId: id }
-            });
-          }
+          setLikes(likesData.data?.length || 0);
+          setComments(commentsData.data || []);
         }
       )
       .subscribe();
@@ -218,7 +190,7 @@ export function PostContent({ id }: { id: string }) {
       supabase.removeChannel(postChannel);
       supabase.removeChannel(interactionsChannel);
     };
-  }, [id, language, user, t]);
+  }, [id, language, user]);
 
   const handleLike = async () => {
     if (!user) return;
@@ -247,10 +219,7 @@ export function PostContent({ id }: { id: string }) {
         setLikes(prev => prev + 1);
       }
     } catch (error) {
-      handleError(error, {
-        userMessage: t('error.like_failed'),
-        context: { postId: id, userId: user.id }
-      });
+      console.error('Error handling like:', error);
     }
   };
 
@@ -279,10 +248,7 @@ export function PostContent({ id }: { id: string }) {
 
       setComments(prev => [...prev, comment as CommentWithUser]);
     } catch (error) {
-      handleError(error, {
-        userMessage: t('error.comment_failed'),
-        context: { postId: id, userId: user.id }
-      });
+      console.error('Error adding comment:', error);
     }
   };
 
@@ -300,10 +266,7 @@ export function PostContent({ id }: { id: string }) {
 
       setComments(prev => prev.filter(comment => comment.id !== commentId));
     } catch (error) {
-      handleError(error, {
-        userMessage: t('error.delete_comment_failed'),
-        context: { commentId, userId: user.id }
-      });
+      console.error('Error deleting comment:', error);
     }
   };
 
@@ -334,10 +297,7 @@ export function PostContent({ id }: { id: string }) {
           });
       }
     } catch (error) {
-      handleError(error, {
-        userMessage: t('error.like_comment_failed'),
-        context: { commentId, userId: user.id }
-      });
+      console.error('Error handling comment like:', error);
     }
   };
 
@@ -345,7 +305,7 @@ export function PostContent({ id }: { id: string }) {
     return (
       <div className="max-w-2xl mx-auto p-4">
         <div className="bg-destructive/10 text-destructive rounded-lg p-4">
-          {t('error.post_not_available')}
+          This post is no longer available.
         </div>
       </div>
     );

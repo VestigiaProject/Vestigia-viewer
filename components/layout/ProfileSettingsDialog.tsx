@@ -15,7 +15,6 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useTranslation } from '@/lib/hooks/useTranslation';
-import { handleError } from '@/lib/utils/error-handler';
 
 type ProfileSettingsDialogProps = {
   open: boolean;
@@ -43,24 +42,15 @@ export function ProfileSettingsDialog({
   const loadUserProfile = async () => {
     if (!user) return;
 
-    try {
-      const { data: profile, error } = await supabase
-        .from('user_profiles')
-        .select('username, avatar_url')
-        .eq('id', user.id)
-        .single();
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('username, avatar_url')
+      .eq('id', user.id)
+      .single();
 
-      if (error) throw error;
-
-      if (profile) {
-        setUsername(profile.username);
-        setAvatarUrl(profile.avatar_url || '');
-      }
-    } catch (error) {
-      handleError(error, {
-        userMessage: t('error.load_profile_failed'),
-        context: { userId: user.id }
-      });
+    if (profile) {
+      setUsername(profile.username);
+      setAvatarUrl(profile.avatar_url || '');
     }
   };
 
@@ -115,12 +105,11 @@ export function ProfileSettingsDialog({
 
       onOpenChange(false);
     } catch (error) {
-      handleError(error, {
-        userMessage: t('error.profile_update_failed'),
-        context: { 
-          userId: user.id,
-          hasAvatarUpdate: !!avatarFile
-        }
+      console.error('Error updating profile:', error);
+      toast({
+        title: t('error.generic'),
+        description: t('error.profile_update_failed'),
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);

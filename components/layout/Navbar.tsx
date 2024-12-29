@@ -22,7 +22,6 @@ import { TimePeriodDialog } from './TimePeriodDialog';
 import { format } from 'date-fns';
 import { useTranslation } from '@/lib/hooks/useTranslation';
 import { fr } from 'date-fns/locale';
-import { handleError } from '@/lib/utils/error-handler';
 
 const START_DATE = '1789-06-01';
 
@@ -38,16 +37,8 @@ export function Navbar() {
   const [showTimePeriod, setShowTimePeriod] = useState(false);
 
   const handleLogout = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      router.push('/');
-    } catch (error) {
-      handleError(error, {
-        userMessage: t('error.logout_failed'),
-        context: {}
-      });
-    }
+    await supabase.auth.signOut();
+    router.push('/');
   };
 
   const toggleLanguage = async () => {

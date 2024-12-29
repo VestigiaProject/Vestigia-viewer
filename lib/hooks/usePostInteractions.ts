@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { handleError } from '../utils/handleError';
-import { useRealtimeSubscription } from './useRealtimeSubscription';
 
 // Types
 interface UserProfile {
@@ -50,103 +49,192 @@ export function usePostInteractions(postId: string) {
     };
   };
 
-  const loadInteractions = useCallback(async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // Fetch likes count
-      const { data: likesData, error: likesError } = await supabase
-        .from('user_interactions')
-        .select('id')
-        .eq('post_id', postId)
-        .eq('type', 'like');
-      if (likesError) throw likesError;
-      setLikes(likesData?.length || 0);
-
-      // Check if current user has liked
-      const { data: userLike } = await supabase
-        .from('user_interactions')
-        .select('id')
-        .eq('post_id', postId)
-        .eq('user_id', user.id)
-        .eq('type', 'like')
-        .single();
-      setIsLiked(!!userLike);
-
-      // Fetch comments
-      const { data: commentsData, error: commentsError } = await supabase
-        .from('user_interactions')
-        .select(`
-          id,
-          user_id,
-          content,
-          created_at,
-          user_profiles (username, avatar_url)
-        `)
-        .eq('post_id', postId)
-        .eq('type', 'comment')
-        .order('created_at', { ascending: true });
-      if (commentsError) throw commentsError;
-
-      // Fetch comment likes
-      const commentLikesData = await Promise.all(
-        (commentsData || []).map(async (comment) => {
-          const [likesCount, userLike] = await Promise.all([
-            supabase
-              .from('user_interactions')
-              .select('id')
-              .eq('parent_id', comment.id)
-              .eq('type', 'comment_like'),
-            user ? supabase
-              .from('user_interactions')
-              .select('id')
-              .eq('parent_id', comment.id)
-              .eq('user_id', user.id)
-              .eq('type', 'comment_like')
-              .single() : { data: null }
-          ]);
-
-          return {
-            commentId: comment.id,
-            count: likesCount.data?.length || 0,
-            isLiked: !!userLike.data
-          };
-        })
-      );
-
-      // Build comment likes map
-      const likesMap = commentLikesData.reduce((acc, { commentId, count, isLiked }) => ({
-        ...acc,
-        [commentId]: { count, isLiked }
-      }), {});
-      setCommentLikes(likesMap);
-
-      // Transform comments with likes data
-      const transformedComments = (commentsData || []).map(transformComment);
-      setComments(transformedComments);
-    } catch (error) {
-      handleError(error, 'Failed to load interactions.');
-    }
-  }, [postId]);
-
-  // Initial load
+  // Load initial data and set up real-time subscriptions
   useEffect(() => {
-    loadInteractions();
-  }, [loadInteractions]);
-
-  // Real-time subscription using the new hook
-  useRealtimeSubscription(
-    'user_interactions',
-    `post_id=eq.${postId}`,
-    async () => {
+    async function loadPostInteractions() {
       try {
-        await loadInteractions();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Fetch likes count
+        const { data: likesData, error: likesError } = await supabase
+          .from('user_interactions')
+          .select('id')
+          .eq('post_id', postId)
+          .eq('type', 'like');
+        if (likesError) throw likesError;
+        setLikes(likesData?.length || 0);
+
+        // Check if current user has liked
+        const { data: userLike } = await supabase
+          .from('user_interactions')
+          .select('id')
+          .eq('post_id', postId)
+          .eq('user_id', user.id)
+          .eq('type', 'like')
+          .single();
+        setIsLiked(!!userLike);
+
+        // Fetch comments
+        const { data: commentsData, error: commentsError } = await supabase
+          .from('user_interactions')
+          .select(`
+            id,
+            user_id,
+            content,
+            created_at,
+            user_profiles (username, avatar_url)
+          `)
+          .eq('post_id', postId)
+          .eq('type', 'comment')
+          .order('created_at', { ascending: true });
+        if (commentsError) throw commentsError;
+
+        // Fetch comment likes
+        const commentLikesData = await Promise.all(
+          (commentsData || []).map(async (comment) => {
+            const [likesCount, userLike] = await Promise.all([
+              supabase
+                .from('user_interactions')
+                .select('id')
+                .eq('parent_id', comment.id)
+                .eq('type', 'comment_like'),
+              user ? supabase
+                .from('user_interactions')
+                .select('id')
+                .eq('parent_id', comment.id)
+                .eq('user_id', user.id)
+                .eq('type', 'comment_like')
+                .single() : { data: null }
+            ]);
+
+            return {
+              commentId: comment.id,
+              count: likesCount.data?.length || 0,
+              isLiked: !!userLike.data
+            };
+          })
+        );
+
+        // Build comment likes map
+        const likesMap = commentLikesData.reduce((acc, { commentId, count, isLiked }) => ({
+          ...acc,
+          [commentId]: { count, isLiked }
+        }), {});
+        setCommentLikes(likesMap);
+
+        // Transform comments with likes data
+        const transformedComments = (commentsData || []).map(transformComment);
+        setComments(transformedComments);
       } catch (error) {
-        handleError(error, 'Failed to update interactions in real-time.');
+        handleError(error, 'Failed to load interactions.');
       }
     }
-  );
+
+    // Initial load
+    loadPostInteractions();
+
+    // Set up real-time subscription for interactions
+    const channel = supabase
+      .channel(`post-${postId}-interactions`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_interactions',
+          filter: `post_id=eq.${postId}`,
+        },
+        async (payload) => {
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            // Refetch all interactions
+            const [likesData, commentsData] = await Promise.all([
+              supabase
+                .from('user_interactions')
+                .select('id')
+                .eq('post_id', postId)
+                .eq('type', 'like'),
+              supabase
+                .from('user_interactions')
+                .select(`
+                  id,
+                  user_id,
+                  content,
+                  created_at,
+                  user_profiles (username, avatar_url)
+                `)
+                .eq('post_id', postId)
+                .eq('type', 'comment')
+                .order('created_at', { ascending: true })
+            ]);
+
+            if (likesData.error) throw likesData.error;
+            if (commentsData.error) throw commentsData.error;
+
+            // Update likes count
+            setLikes(likesData.data?.length || 0);
+
+            // Check if current user's like status has changed
+            const { data: userLike } = await supabase
+              .from('user_interactions')
+              .select('id')
+              .eq('post_id', postId)
+              .eq('user_id', user.id)
+              .eq('type', 'like')
+              .single();
+            setIsLiked(!!userLike);
+
+            // Fetch comment likes
+            const commentLikesData = await Promise.all(
+              (commentsData.data || []).map(async (comment) => {
+                const [likesCount, userLike] = await Promise.all([
+                  supabase
+                    .from('user_interactions')
+                    .select('id')
+                    .eq('parent_id', comment.id)
+                    .eq('type', 'comment_like'),
+                  user ? supabase
+                    .from('user_interactions')
+                    .select('id')
+                    .eq('parent_id', comment.id)
+                    .eq('user_id', user.id)
+                    .eq('type', 'comment_like')
+                    .single() : { data: null }
+                ]);
+
+                return {
+                  commentId: comment.id,
+                  count: likesCount.data?.length || 0,
+                  isLiked: !!userLike.data
+                };
+              })
+            );
+
+            // Build comment likes map
+            const likesMap = commentLikesData.reduce((acc, { commentId, count, isLiked }) => ({
+              ...acc,
+              [commentId]: { count, isLiked }
+            }), {});
+            setCommentLikes(likesMap);
+
+            // Update comments with likes data
+            const transformedComments = (commentsData.data || []).map(transformComment);
+            setComments(transformedComments);
+          } catch (error) {
+            handleError(error, 'Failed to update interactions in real-time.');
+          }
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [postId]);
 
   // Like post
   const likePost = useCallback(async () => {

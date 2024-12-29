@@ -58,15 +58,25 @@ export function HistoricalPost({
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            videoRef.current?.play().catch(() => {
-              // Autoplay was prevented
-            });
+            if (videoRef.current) {
+              videoRef.current.preload = 'auto';
+              videoRef.current.play().catch(() => {
+                // Autoplay was prevented
+              });
+            }
           } else {
-            videoRef.current?.pause();
+            if (videoRef.current) {
+              videoRef.current.pause();
+              videoRef.current.preload = 'none';
+              videoRef.current.src = videoRef.current.src;
+            }
           }
         });
       },
-      { threshold: 0.2 }
+      { 
+        threshold: 0.5,
+        rootMargin: '50px 0px'
+      }
     );
 
     observer.observe(videoRef.current);
@@ -242,12 +252,12 @@ export function HistoricalPost({
                     <video
                       ref={videoRef}
                       src={post.media_url}
-                      className="w-full object-contain"
+                      className="w-full max-w-[1280px] max-h-[720px] object-contain mx-auto"
                       controls
                       muted
                       loop
                       playsInline
-                      preload="metadata"
+                      preload="none"
                       controlsList="nodownload"
                       onClick={(e) => e.stopPropagation()}
                     />

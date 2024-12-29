@@ -9,6 +9,8 @@ import { useEffect, useState } from 'react';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { HistoricalPostWithFigure, UserInteraction } from '@/lib/supabase';
+import { handleError } from '@/lib/utils/error-handler';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
 export function ProfilePosts({
   figureId,
@@ -18,6 +20,7 @@ export function ProfilePosts({
   currentDate: Date;
 }) {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [posts, setPosts] = useState<HistoricalPostWithFigure[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -46,76 +49,116 @@ export function ProfilePosts({
 
       setPostInteractions((prev) => ({ ...prev, ...newInteractions }));
     } catch (error) {
-      console.error('Error loading posts:', error);
+      handleError(error, {
+        userMessage: t('error.load_posts_failed'),
+        context: { 
+          figureId,
+          page,
+          currentDate: currentDate.toISOString()
+        }
+      });
     }
   }
 
   async function loadUserLikes() {
     if (!user) return;
-    const { data } = await supabase
-      .from('user_interactions')
-      .select('post_id')
-      .eq('user_id', user.id)
-      .eq('type', 'like');
+    try {
+      const { data, error } = await supabase
+        .from('user_interactions')
+        .select('post_id')
+        .eq('user_id', user.id)
+        .eq('type', 'like');
 
-    if (data) {
-      setUserLikes(new Set(data.map((like) => like.post_id)));
+      if (error) throw error;
+      if (data) {
+        setUserLikes(new Set(data.map((like) => like.post_id)));
+      }
+    } catch (error) {
+      handleError(error, {
+        userMessage: t('error.load_likes_failed'),
+        context: { userId: user.id }
+      });
     }
   }
 
   async function handleLike(postId: string) {
     if (!user) return;
 
-    const isLiked = userLikes.has(postId);
-    if (isLiked) {
-      await supabase
-        .from('user_interactions')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('post_id', postId)
-        .eq('type', 'like');
+    try {
+      const isLiked = userLikes.has(postId);
+      if (isLiked) {
+        const { error } = await supabase
+          .from('user_interactions')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('post_id', postId)
+          .eq('type', 'like');
 
-      setUserLikes((prev) => {
-        const next = new Set(prev);
-        next.delete(postId);
-        return next;
-      });
-    } else {
-      await supabase
-        .from('user_interactions')
-        .insert({
-          user_id: user.id,
-          post_id: postId,
-          type: 'like',
+        if (error) throw error;
+
+        setUserLikes((prev) => {
+          const next = new Set(prev);
+          next.delete(postId);
+          return next;
         });
+      } else {
+        const { error } = await supabase
+          .from('user_interactions')
+          .insert({
+            user_id: user.id,
+            post_id: postId,
+            type: 'like',
+          });
 
-      setUserLikes((prev) => new Set([...prev, postId]));
+        if (error) throw error;
+
+        setUserLikes((prev) => new Set([...prev, postId]));
+      }
+    } catch (error) {
+      handleError(error, {
+        userMessage: t('error.like_failed'),
+        context: { 
+          postId,
+          userId: user.id,
+          action: userLikes.has(postId) ? 'unlike' : 'like'
+        }
+      });
     }
   }
 
   async function handleComment(postId: string, content: string) {
     if (!user) return;
 
-    const { data: comment, error } = await supabase
-      .from('user_interactions')
-      .insert({
-        user_id: user.id,
-        post_id: postId,
-        type: 'comment',
-        content,
-      })
-      .select()
-      .single();
+    try {
+      const { data: comment, error } = await supabase
+        .from('user_interactions')
+        .insert({
+          user_id: user.id,
+          post_id: postId,
+          type: 'comment',
+          content,
+        })
+        .select()
+        .single();
 
-    if (error) throw error;
+      if (error) throw error;
 
-    setPostInteractions((prev) => ({
-      ...prev,
-      [postId]: {
-        ...prev[postId],
-        comments: [...prev[postId].comments, comment],
-      },
-    }));
+      setPostInteractions((prev) => ({
+        ...prev,
+        [postId]: {
+          ...prev[postId],
+          comments: [...prev[postId].comments, comment],
+        },
+      }));
+    } catch (error) {
+      handleError(error, {
+        userMessage: t('error.comment_failed'),
+        context: { 
+          postId,
+          userId: user.id
+        }
+      });
+    }
   }
 
   return (
@@ -130,7 +173,7 @@ export function ProfilePosts({
         loader={<Skeleton className="h-48 w-full my-4" />}
         endMessage={
           <p className="text-center text-muted-foreground py-4">
-            No more historical posts to load
+            {t('profile.no_more_posts')}
           </p>
         }
       >

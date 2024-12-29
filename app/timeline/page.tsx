@@ -10,6 +10,8 @@ import InfiniteScroll from 'react-infinite-scroll-component';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { HistoricalPostWithFigure, UserInteraction } from '@/lib/supabase';
 import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+import { handleError } from '@/lib/utils/error-handler';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
 const START_DATE = '1789-06-04';
 const SESSION_KEY = 'timeline_state';
@@ -33,6 +35,7 @@ interface TimelineState {
 
 export default function TimelinePage() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const { currentDate } = useTimeProgress(START_DATE);
   const currentDateStr = currentDate.toISOString();
 
@@ -59,9 +62,17 @@ export default function TimelinePage() {
   useEffect(() => {
     const loadInitialData = async () => {
       setLoading(true);
-      await loadUserLikes();
-      await loadPosts(1, true);
-      setLoading(false);
+      try {
+        await loadUserLikes();
+        await loadPosts(1, true);
+      } catch (error) {
+        handleError(error, {
+          userMessage: t('error.load_timeline_failed'),
+          context: { currentDate: currentDateStr }
+        });
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadInitialData();
@@ -88,7 +99,7 @@ export default function TimelinePage() {
     if (scrollPosition > 0 && !loading) {
       window.scrollTo(0, scrollPosition);
     }
-  }, [loading]);
+  }, [loading, scrollPosition]);
 
   // Save scroll position before navigating away
   useEffect(() => {
@@ -136,11 +147,18 @@ export default function TimelinePage() {
       
       setPostInteractions(prev => resetPosts ? newInteractions : { ...prev, ...newInteractions });
     } catch (error) {
-      console.error('Error loading posts:', error);
+      handleError(error, {
+        userMessage: t('error.load_posts_failed'),
+        context: { 
+          page: pageToLoad,
+          currentDate: currentDateStr,
+          resetPosts 
+        }
+      });
     } finally {
       setLoading(false);
     }
-  }, [currentDate, posts]);
+  }, [currentDate, posts, t, currentDateStr]);
 
   // Set up real-time listeners for interactions only
   useEffect(() => {
@@ -161,12 +179,19 @@ export default function TimelinePage() {
                         (payload.old as UserInteractionPayload)?.post_id;
           if (!postId) return;
 
-          // Refetch interactions for the affected post
-          const interactions = await fetchPostInteractions(postId);
-          setPostInteractions(prev => ({
-            ...prev,
-            [postId]: interactions
-          }));
+          try {
+            // Refetch interactions for the affected post
+            const interactions = await fetchPostInteractions(postId);
+            setPostInteractions(prev => ({
+              ...prev,
+              [postId]: interactions
+            }));
+          } catch (error) {
+            handleError(error, {
+              userMessage: t('error.update_interactions_failed'),
+              context: { postId }
+            });
+          }
         }
       )
       .subscribe();
@@ -174,74 +199,107 @@ export default function TimelinePage() {
     return () => {
       interactionsChannel.unsubscribe();
     };
-  }, [user, posts]);
+  }, [user, posts, t]);
 
   async function loadUserLikes() {
     if (!user) return;
-    const { data } = await supabase
-      .from('user_interactions')
-      .select('post_id')
-      .eq('user_id', user.id)
-      .eq('type', 'like');
+    try {
+      const { data, error } = await supabase
+        .from('user_interactions')
+        .select('post_id')
+        .eq('user_id', user.id)
+        .eq('type', 'like');
 
-    if (data) {
-      setUserLikes(new Set(data.map((like) => like.post_id)));
+      if (error) throw error;
+      if (data) {
+        setUserLikes(new Set(data.map((like) => like.post_id)));
+      }
+    } catch (error) {
+      handleError(error, {
+        userMessage: t('error.load_likes_failed'),
+        context: { userId: user.id }
+      });
     }
   }
 
   async function handleLike(postId: string) {
     if (!user) return;
 
-    const isLiked = userLikes.has(postId);
-    if (isLiked) {
-      await supabase
-        .from('user_interactions')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('post_id', postId)
-        .eq('type', 'like');
+    try {
+      const isLiked = userLikes.has(postId);
+      if (isLiked) {
+        const { error } = await supabase
+          .from('user_interactions')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('post_id', postId)
+          .eq('type', 'like');
 
-      setUserLikes((prev) => {
-        const next = new Set(prev);
-        next.delete(postId);
-        return next;
-      });
-    } else {
-      await supabase
-        .from('user_interactions')
-        .insert({
-          user_id: user.id,
-          post_id: postId,
-          type: 'like',
+        if (error) throw error;
+
+        setUserLikes((prev) => {
+          const next = new Set(prev);
+          next.delete(postId);
+          return next;
         });
+      } else {
+        const { error } = await supabase
+          .from('user_interactions')
+          .insert({
+            user_id: user.id,
+            post_id: postId,
+            type: 'like',
+          });
 
-      setUserLikes((prev) => new Set([...prev, postId]));
+        if (error) throw error;
+
+        setUserLikes((prev) => new Set([...prev, postId]));
+      }
+    } catch (error) {
+      handleError(error, {
+        userMessage: t('error.like_failed'),
+        context: { 
+          postId,
+          userId: user.id,
+          action: userLikes.has(postId) ? 'unlike' : 'like'
+        }
+      });
     }
   }
 
   async function handleComment(postId: string, content: string) {
     if (!user) return;
 
-    const { data: comment, error } = await supabase
-      .from('user_interactions')
-      .insert({
-        user_id: user.id,
-        post_id: postId,
-        type: 'comment',
-        content,
-      })
-      .select()
-      .single();
+    try {
+      const { data: comment, error } = await supabase
+        .from('user_interactions')
+        .insert({
+          user_id: user.id,
+          post_id: postId,
+          type: 'comment',
+          content,
+        })
+        .select()
+        .single();
 
-    if (error) throw error;
+      if (error) throw error;
 
-    setPostInteractions((prev) => ({
-      ...prev,
-      [postId]: {
-        ...prev[postId],
-        comments: [...prev[postId].comments, comment],
-      },
-    }));
+      setPostInteractions((prev) => ({
+        ...prev,
+        [postId]: {
+          ...prev[postId],
+          comments: [...prev[postId].comments, comment],
+        },
+      }));
+    } catch (error) {
+      handleError(error, {
+        userMessage: t('error.comment_failed'),
+        context: { 
+          postId,
+          userId: user.id
+        }
+      });
+    }
   }
 
   return (
@@ -266,7 +324,7 @@ export default function TimelinePage() {
           loader={<div className="bg-white/95 rounded-lg shadow-sm my-4"><Skeleton className="h-48 w-full" /></div>}
           endMessage={
             <p className="text-center text-muted-foreground py-4 bg-white/95 rounded-lg shadow-sm">
-              No more historical posts to load
+              {t('timeline.no_more_posts')}
             </p>
           }
           scrollThreshold="200px"

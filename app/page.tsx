@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useTranslation } from '@/lib/hooks/useTranslation';
+import { handleError } from '@/lib/utils/error-handler';
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -31,7 +32,10 @@ export default function Home() {
       });
       if (error) throw error;
     } catch (error) {
-      console.error('Error:', error);
+      handleError(error, {
+        userMessage: t('error.google_login_failed'),
+        context: { origin: window.location.origin }
+      });
     } finally {
       setAuthLoading(false);
     }
@@ -58,64 +62,38 @@ export default function Home() {
       </div>
 
       {/* Content */}
-      <div className="relative min-h-screen flex items-center">
-        <div className="w-full px-4 py-8 md:py-16">
-          <div className="flex flex-col items-center justify-center space-y-8 text-center max-w-4xl mx-auto">
-            <ScrollText className="h-16 w-16 md:h-20 md:w-20 text-blue-400" />
-            <h1 className="text-3xl md:text-6xl font-bold text-white bg-clip-text">{t('landing.title')}</h1>
-            <p className="text-lg md:text-2xl text-blue-400 font-medium">
-              {t('landing.tagline')}
-            </p>
-            <p className="text-lg md:text-2xl text-gray-200 max-w-2xl">
-              {t('landing.subtitle')}
-            </p>
-            <div className="space-y-4">
-              <Button
-                size="lg"
-                className="bg-blue-500 hover:bg-blue-600 text-white"
-                onClick={handleGoogleLogin}
-                disabled={authLoading}
-              >
-                <Chrome className="mr-2 h-5 w-5" />
-                {authLoading ? t('landing.signing_in') : t('landing.signin_google')}
-              </Button>
-            </div>
-            <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 w-full">
-              <FeatureCard
-                title={t('landing.feature.timeline.title')}
-                description={t('landing.feature.timeline.desc')}
-              />
-              <FeatureCard
-                title={t('landing.feature.interactive.title')}
-                description={t('landing.feature.interactive.desc')}
-              />
-              <FeatureCard
-                title={t('landing.feature.realtime.title')}
-                description={t('landing.feature.realtime.desc')}
-              />
-            </div>
-            
-            {/* Logo section */}
-            <div className="mt-16 flex flex-col items-center space-y-4">
-              <p className="text-gray-300 text-sm">{t('landing.logo')}</p>
-              <img 
-                src="/vestigialogo.png" 
-                alt="Vestigia Logo" 
-                className="h-24 w-auto opacity-70 hover:opacity-100 transition-opacity"
-              />
-            </div>
+      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4">
+        <div className="text-center space-y-8 max-w-3xl">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white">
+            {t('landing.title')}
+          </h1>
+          <p className="text-xl sm:text-2xl text-gray-200">
+            {t('landing.subtitle')}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button
+              size="lg"
+              onClick={handleGoogleLogin}
+              disabled={authLoading}
+              className="bg-white text-black hover:bg-gray-100"
+            >
+              <Chrome className="mr-2 h-5 w-5" />
+              {authLoading ? t('auth.signing_in') : t('auth.sign_in_with_google')}
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="border-white text-white hover:bg-white/10"
+              asChild
+            >
+              <a href="https://github.com/yourusername/yourproject" target="_blank" rel="noopener noreferrer">
+                <ScrollText className="mr-2 h-5 w-5" />
+                {t('landing.learn_more')}
+              </a>
+            </Button>
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function FeatureCard({ title, description }: { title: string; description: string }) {
-  return (
-    <div className="p-6 rounded-lg border border-gray-600 bg-black/40 backdrop-blur-sm hover:bg-black/50 transition-colors">
-      <h3 className="text-xl font-semibold mb-2 text-white">{title}</h3>
-      <p className="text-gray-300">{description}</p>
     </div>
   );
 }

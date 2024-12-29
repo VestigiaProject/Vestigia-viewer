@@ -5,6 +5,8 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../supabase';
 import { useAuth } from './useAuth';
 import { useToast } from '@/components/ui/use-toast';
+import { handleError } from '@/lib/utils/error-handler';
+import { useTranslation } from './useTranslation';
 
 type Language = 'fr' | 'en';
 
@@ -26,6 +28,7 @@ const getInitialLanguage = (): Language => {
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [language, setLanguageState] = useState<Language>(getInitialLanguage);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -65,20 +68,16 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
             .eq('id', user.id);
 
           if (updateError) {
-            console.error('Error setting initial language:', updateError);
-            toast({
-              title: 'Error',
-              description: 'Failed to save language preference. Please try again.',
-              variant: 'destructive',
+            handleError(updateError, {
+              userMessage: t('error.save_language_failed'),
+              context: { userId: user.id, language }
             });
           }
         }
       } catch (error) {
-        console.error('Error loading language preference:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load language preference. Using default.',
-          variant: 'destructive',
+        handleError(error, {
+          userMessage: t('error.load_language_failed'),
+          context: { userId: user.id }
         });
       } finally {
         setIsLoading(false);
@@ -86,7 +85,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     };
 
     loadLanguagePreference();
-  }, [user, language, toast]);
+  }, [user, language, t]);
 
   // Save language preference to user profile and localStorage
   const setLanguage = async (newLanguage: Language) => {
@@ -112,15 +111,17 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('language', newLanguage);
       
       toast({
-        title: 'Success',
+        title: t('success.language_updated'),
         description: newLanguage === 'en' ? 'Switched to English' : 'Passé en français',
       });
     } catch (error) {
-      console.error('Error updating language preference:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update language preference. Please try again.',
-        variant: 'destructive',
+      handleError(error, {
+        userMessage: t('error.update_language_failed'),
+        context: { 
+          userId: user?.id,
+          newLanguage,
+          currentLanguage: language
+        }
       });
     } finally {
       setIsLoading(false);

@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../supabase';
 import { useLanguage } from './useLanguage';
+import { handleError } from '@/lib/utils/error-handler';
 
 type Translations = Record<string, { fr: string; en: string }>;
 
@@ -34,7 +35,10 @@ export function TranslationProvider({ children }: { children: React.ReactNode })
 
         setTranslations(translationsMap);
       } catch (error) {
-        console.error('Error loading translations:', error);
+        handleError(error, {
+          userMessage: 'Failed to load translations',
+          context: {}
+        });
       } finally {
         setIsLoading(false);
       }

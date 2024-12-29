@@ -136,18 +136,20 @@ export function Comments({ comments, onComment, onDeleteComment, onToggleComment
                   <div className="text-sm">
                     <Markdown content={comment.content || ''} />
                   </div>
-                  <div className="mt-2 flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className={`space-x-1 ${comment.likes?.isLiked ? 'text-red-500' : ''}`}
-                      onClick={() => onToggleCommentLike?.(comment.id)}
-                      disabled={!user || !onToggleCommentLike}
-                    >
-                      <Heart className={`h-4 w-4 ${comment.likes?.isLiked ? 'fill-current' : ''}`} />
-                      <span>{comment.likes?.count || 0}</span>
-                    </Button>
-                  </div>
+                  {comment.likes && onToggleCommentLike && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={`space-x-1 ${comment.likes.isLiked ? 'text-red-500' : ''}`}
+                        onClick={() => onToggleCommentLike(comment.id)}
+                        disabled={!user}
+                      >
+                        <Heart className={`h-4 w-4 ${comment.likes.isLiked ? 'fill-current' : ''}`} />
+                        <span>{comment.likes.count}</span>
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

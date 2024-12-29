@@ -334,6 +334,11 @@ export default function TimelinePage() {
               <div key={post.id} className="bg-white/95 rounded-lg shadow-sm">
                 <HistoricalPost
                   post={post}
+                  onLike={handleLike}
+                  onComment={handleComment}
+                  likes={postInteractions[post.id]?.likes || 0}
+                  isLiked={userLikes.has(post.id)}
+                  comments={postInteractions[post.id]?.comments || []}
                 />
               </div>
             ))}

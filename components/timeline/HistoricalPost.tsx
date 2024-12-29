@@ -1,37 +1,55 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/hooks/useAuth';
-import { useLanguage } from '@/hooks/useLanguage';
-import { useTranslation } from '@/lib/hooks/useTranslation';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import { Check, Heart, MessageCircle } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { format } from 'date-fns';
+import { Heart, MessageCircle, Check } from 'lucide-react';
+import type { HistoricalPostWithFigure, UserInteraction } from '@/lib/supabase';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState, useEffect, useRef } from 'react';
+import { useToast } from '@/components/ui/use-toast';
+import { useLanguage } from '@/lib/hooks/useLanguage';
+import { useTranslation } from '@/lib/hooks/useTranslation';
+import { fr } from 'date-fns/locale';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { supabase } from '@/lib/supabase';
+import { fetchPostInteractions } from '@/lib/api/posts';
 import { Markdown } from '@/components/ui/markdown';
 import { cn } from '@/lib/utils';
-import Link from 'next/link';
-import { usePostInteractions } from '@/lib/hooks/usePostInteractions';
-import type { HistoricalPostWithFigure } from '@/lib/supabase';
 
-interface PostProps {
+type PostProps = {
   post: HistoricalPostWithFigure;
-}
+  onLike: (postId: string) => Promise<void>;
+  onComment: (postId: string, content: string) => Promise<void>;
+  likes: number;
+  isLiked: boolean;
+  comments: UserInteraction[];
+};
 
 const isVideoUrl = (url: string) => {
   return url?.match(/\.(mp4|webm|ogg)(\?.*)?$/i) !== null;
 };
 
-export function HistoricalPost({ post }: PostProps) {
+export function HistoricalPost({
+  post,
+  onLike,
+  onComment,
+  likes: initialLikes,
+  isLiked: initialIsLiked,
+  comments: initialComments,
+}: PostProps) {
   const router = useRouter();
   const { user } = useAuth();
   const { language } = useLanguage();
   const { t } = useTranslation();
   const videoRef = useRef<HTMLVideoElement>(null);
-  const { isLiked, likes, comments, likePost, unlikePost } = usePostInteractions(post.id);
+  const [likeCount, setLikeCount] = useState(initialLikes);
+  const [liked, setLiked] = useState(initialIsLiked);
+  const [comments, setComments] = useState(initialComments);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!videoRef.current) return;
@@ -58,14 +76,113 @@ export function HistoricalPost({ post }: PostProps) {
     };
   }, []);
 
-  const handleLike = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!user) return;
-    
-    if (isLiked) {
-      unlikePost();
-    } else {
-      likePost();
+  // Load initial interactions
+  useEffect(() => {
+    const loadInitialInteractions = async () => {
+      try {
+        const interactions = await fetchPostInteractions(post.id, user?.id);
+        setLikeCount(interactions.likes);
+        setLiked(interactions.isLiked || false);
+        setComments(interactions.comments);
+      } catch (error) {
+        console.error('Error loading initial interactions:', error);
+      }
+    };
+
+    loadInitialInteractions();
+  }, [post.id, user?.id]);
+
+  // Subscribe to real-time updates
+  useEffect(() => {
+    const channel = supabase
+      .channel(`post-${post.id}-interactions`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'user_interactions',
+          filter: `post_id=eq.${post.id}`,
+        },
+        async () => {
+          try {
+            const interactions = await fetchPostInteractions(post.id, user?.id);
+            setLikeCount(interactions.likes);
+            setLiked(interactions.isLiked || false);
+            setComments(interactions.comments);
+          } catch (error) {
+            console.error('Error updating interactions:', error);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'user_interactions',
+          filter: `post_id=eq.${post.id}`,
+        },
+        async () => {
+          try {
+            const interactions = await fetchPostInteractions(post.id, user?.id);
+            setLikeCount(interactions.likes);
+            setLiked(interactions.isLiked || false);
+            setComments(interactions.comments);
+          } catch (error) {
+            console.error('Error updating interactions:', error);
+          }
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log(`Subscribed to interactions for post ${post.id}`);
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [post.id, user?.id]);
+
+  const handleLike = async () => {
+    if (!user || loading) return;
+    setLoading(true);
+
+    try {
+      if (liked) {
+        await supabase
+          .from('user_interactions')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('post_id', post.id)
+          .eq('type', 'like');
+      } else {
+        await supabase
+          .from('user_interactions')
+          .insert({
+            user_id: user.id,
+            post_id: post.id,
+            type: 'like',
+          });
+      }
+
+      // Optimistic update
+      setLiked(!liked);
+      setLikeCount(prev => liked ? prev - 1 : prev + 1);
+    } catch (error) {
+      console.error('Error liking post:', error);
+      toast({
+        title: t('error.generic'),
+        description: t('error.like_failed'),
+        variant: 'destructive',
+      });
+      // Revert optimistic update on error
+      const interactions = await fetchPostInteractions(post.id, user.id);
+      setLikeCount(interactions.likes);
+      setLiked(interactions.isLiked || false);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -74,8 +191,8 @@ export function HistoricalPost({ post }: PostProps) {
     // Store current post data in sessionStorage before navigating
     sessionStorage.setItem('currentPostData', JSON.stringify({
       post,
-      likes,
-      isLiked,
+      likes: likeCount,
+      isLiked: liked,
       comments
     }));
     router.push(`/post/${post.id}`);
@@ -152,12 +269,16 @@ export function HistoricalPost({ post }: PostProps) {
                 size="sm"
                 className={cn(
                   "h-8 px-3 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20",
-                  isLiked && "text-red-500"
+                  liked && "text-red-500"
                 )}
-                onClick={handleLike}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleLike();
+                }}
+                disabled={loading}
               >
-                <Heart className={cn("h-4 w-4 mr-2", isLiked && "fill-current")} />
-                <span className="text-sm font-medium">{likes}</span>
+                <Heart className={cn("h-4 w-4 mr-2", liked && "fill-current")} />
+                <span className="text-sm font-medium">{likeCount}</span>
               </Button>
               <Button
                 variant="ghost"

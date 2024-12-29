@@ -182,6 +182,11 @@ export function ProfilePosts({
             <HistoricalPost
               key={post.id}
               post={post}
+              onLike={handleLike}
+              onComment={handleComment}
+              likes={postInteractions[post.id]?.likes || 0}
+              isLiked={userLikes.has(post.id)}
+              comments={postInteractions[post.id]?.comments || []}
             />
           ))}
         </div>

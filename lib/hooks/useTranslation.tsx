@@ -2,9 +2,8 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../supabase';
-import { useLanguage, LanguageContext } from './useLanguage';
+import { useLanguage } from './useLanguage';
 import { handleError } from '@/lib/utils/error-handler';
-import type { Language } from './useLanguage';
 
 type Translations = Record<string, { fr: string; en: string }>;
 
@@ -16,7 +15,7 @@ type TranslationContextType = {
 const TranslationContext = createContext<TranslationContextType | undefined>(undefined);
 
 export function TranslationProvider({ children }: { children: React.ReactNode }) {
-  const languageContext = useContext(LanguageContext);
+  const { language } = useLanguage();
   const [translations, setTranslations] = useState<Translations>({});
   const [isLoading, setIsLoading] = useState(true);
 
@@ -54,9 +53,7 @@ export function TranslationProvider({ children }: { children: React.ReactNode })
       return key;
     }
 
-    // Use language from context if available, otherwise default to 'fr'
-    const currentLanguage: Language = languageContext?.language || 'fr';
-    let text = currentLanguage === 'en' ? translations[key].en : translations[key].fr;
+    let text = language === 'en' ? translations[key].en : translations[key].fr;
 
     if (params) {
       Object.entries(params).forEach(([param, value]) => {
